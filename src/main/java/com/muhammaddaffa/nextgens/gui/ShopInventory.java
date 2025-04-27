@@ -113,6 +113,13 @@ public class ShopInventory extends FastInv {
                     NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.gen-purchase", new Placeholder()
                             .add("{gen}", generator.displayName())
                             .add("{cost}", Common.digits(cost)));
+                    
+                    // Execute commands if any are specified
+                    if (!commands.isEmpty()) {
+                        commands.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command
+                                .replace("{player}", this.player.getName())));
+                    }
+                    
                     // close on purchase
                     if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("close-on-purchase")) {
                         this.player.closeInventory();
