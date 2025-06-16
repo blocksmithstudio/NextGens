@@ -13,7 +13,7 @@ public class Settings {
             CORRUPTION_HOLOGRAM, DEFAULT_MAX_GENERATOR_ENABLED, SELL_COMMAND, PLACE_PERMISSION, ONLINE_ONLY,
             ANTI_EXPLOSION, DISABLE_DROP_PLACE, ISLAND_PICKUP,
             UPGRADE_GUI, CLOSE_ON_PURCHASE, CLOSE_ON_NO_MONEY, DROP_ON_BREAK, BROKEN_PICKUP, REPAIR_OWNER_ONLY,
-            DISABLE_CRAFTING, GENERATOR_PLACE_DISTANCE;
+            DISABLE_CRAFTING, GENERATOR_PLACE_DISTANCE, CORRUPTION_ONLINE_ONLY;
 
     // String
     public static String GENS_PICKUP_ACTION, GENS_UPGRADE_ACTION, GENS_FIX_ACTION, CORRUPT_GUI_TITLE;
@@ -61,6 +61,7 @@ public class Settings {
         REPAIR_OWNER_ONLY = config.getBoolean("repair-owner-only");
         DISABLE_CRAFTING = config.getBoolean("disable-crafting.enabled");
         GENERATOR_PLACE_DISTANCE = config.getBoolean("generator-place-distance.enabled");
+        CORRUPTION_ONLINE_ONLY = config.getBoolean("corruption.online-only");
 
         // String
         GENS_PICKUP_ACTION = config.getString("interaction.gens-pickup");

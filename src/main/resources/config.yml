@@ -43,6 +43,8 @@ corruption:
   enabled: true
   # How often should corruption happen (in minutes)
   interval: 180
+  # Should we corrupt the generator if the player are online?
+  online-only: true
   # How many generators can possibly corrupt
   # Default: 10 (If there are 100 generators, 10 of them will be randomly chosen and tested for corruption)
   percentage: 10

@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.autosell.Autosell;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -47,11 +48,31 @@ public class PlayerSettingsInventory extends FastInv {
             // retrieve the data
             String type = config.getString("items." + key + ".type");
             List<Integer> slots = config.getIntegerList("items." + key + ".slots");
-            ItemStack stack = ItemBuilder.fromConfig(config, "items." + key, new Placeholder()
-                            .add("{status_cashback}", user.isToggleCashback() ? on : off)
-                            .add("{status_inventory_autosell}", user.isToggleInventoryAutoSell() ? on : off)
-                            .add("{status_gens_autosell}", user.isToggleGensAutoSell() ? on : off))
-                    .build();
+
+            // retrieve the display-name and lore
+            String displayName = config.getString("items." + key + ".display-name");
+            List<String> lore = config.getStringList("items." + key + ".lore");
+
+            // parse the placeholder
+            displayName = PlaceholderAPI.setPlaceholders(player, displayName);
+            lore = PlaceholderAPI.setPlaceholders(player, lore);
+
+            // make a new variable to make it clean
+            Placeholder placeholder = new Placeholder()
+                    .add("{status_cashback}", user.isToggleCashback() ? on : off)
+                    .add("{status_inventory_autosell}", user.isToggleInventoryAutoSell() ? on : off)
+                    .add("{status_gens_autosell}", user.isToggleGensAutoSell() ? on : off);
+
+            // build the item by fromConfig
+            ItemBuilder builder = ItemBuilder.fromConfig(config, "items." + key, placeholder);
+
+            // this part still concern but works
+            builder.name(displayName);
+            builder.lore(lore);
+            builder.placeholder(placeholder);
+
+            // build it
+            ItemStack stack = builder.build();
             // set the items
             this.setItems(Utils.convertListToIntArray(slots), stack, event -> {
                 if (type == null || type.equalsIgnoreCase("dummy")) return;

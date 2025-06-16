@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -71,6 +72,12 @@ public class CorruptionTask extends BukkitRunnable {
         // get possibly infected generators
         AtomicInteger actuallyCorrupted = new AtomicInteger();
         for (ActiveGenerator active : this.getPossiblyInfectedGenerators()) {
+            // get Player
+            Player player = Bukkit.getPlayer(active.getOwner());
+            // check for online-only option
+            if (Settings.CORRUPTION_ONLINE_ONLY && player == null) {
+                continue;
+            }
             // check for chances
             if (ThreadLocalRandom.current().nextDouble(101) <= active.getGenerator().corruptChance()) {
                 // must run in a sync task
