@@ -6,6 +6,8 @@ import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.ItemBuilder;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
+import java.util.stream.Collectors;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
@@ -15,12 +17,15 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ShopInventory extends FastInv {
+
+    private HeadDatabaseAPI hdbAPI;
 
     public static void openInventory(Player player, GeneratorManager generatorManager) {
         ShopInventory gui = new ShopInventory(player, generatorManager);
@@ -40,9 +45,50 @@ public class ShopInventory extends FastInv {
         this.player = player;
         this.generatorManager = generatorManager;
 
+        if (Bukkit.getPluginManager().getPlugin("HeadDatabase") != null) {
+            this.hdbAPI = new HeadDatabaseAPI();
+        }
+
         this.loadItems();
         this.setAllItems();
     }
+
+    private ItemStack createItemFromConfig(FileConfiguration config, String key) {
+        String materialString = config.getString(key + ".material", "STONE");
+
+        if (materialString.startsWith("hdb-") && hdbAPI != null) {
+            try {
+                String headId = materialString.substring(4);
+                ItemStack head = hdbAPI.getItemHead(headId);
+
+                if (head != null) {
+                    ItemBuilder builder = new ItemBuilder(head);
+
+                    if (config.contains(key + ".display-name")) {
+                        String displayName = config.getString(key + ".display-name");
+                        builder.name(Common.color(displayName));
+                    }
+
+                    if (config.contains(key + ".lore")) {
+                        List<String> lore = config.getStringList(key + ".lore");
+                        List<String> coloredLore = lore.stream()
+                                .map(Common::color)
+                                .collect(Collectors.toList());
+                        builder.lore(coloredLore);
+                    }
+
+
+                    return builder.build();
+                }
+            } catch (Exception e) {
+                Bukkit.getLogger().warning("Failed to get HeadDatabase head with ID: " + materialString);
+                e.printStackTrace();
+            }
+        }
+        ItemBuilder builder = ItemBuilder.fromConfig(config, key);
+        return builder != null ? builder.build() : new ItemStack(Material.STONE);
+    }
+
 
     private void loadItems() {
         // clear the items first
@@ -76,9 +122,8 @@ public class ShopInventory extends FastInv {
             String type = config.getString(key + ".type", "dummy");
             List<Integer> slots = config.getIntegerList(key + ".slots");
             List<String> commands = config.getStringList(key + ".commands");
-            ItemBuilder builder = ItemBuilder.fromConfig(config, key);
-            if (builder == null) continue;
-            ItemStack stack = builder.build();
+            ItemStack stack = createItemFromConfig(config, key);
+            if (stack == null) continue;
 
             if (type.equalsIgnoreCase("GENERATOR")) {
                 String id = config.getString(key + ".generator");
@@ -120,7 +165,16 @@ public class ShopInventory extends FastInv {
                 });
                 continue;
             }
-
+            if (type.equalsIgnoreCase("JUMP_TO_PAGE")) {
+                int targetPage = config.getInt(key + ".target_page", 1);
+                this.setItems(Utils.convertListToIntArray(slots), stack, event -> {
+                    if (this.paginationMap.containsKey(targetPage)) {
+                        this.guiPage = targetPage;
+                        this.setAllItems();
+                    }
+                });
+                continue;
+            }
             if (type.equalsIgnoreCase("NEXT_PAGE")) {
                 this.setItems(Utils.convertListToIntArray(slots), stack, event -> {
                     if (this.paginationMap.containsKey(this.guiPage + 1)) {

@@ -175,7 +175,7 @@
         <dependency>
             <groupId>com.bgsoftware</groupId>
             <artifactId>SuperiorSkyblockAPI</artifactId>
-            <version>2024.1</version>
+            <version>2025.1</version>
             <scope>provided</scope>
         </dependency>
         <!-- BentoBox -->
@@ -203,8 +203,7 @@
         <dependency>
             <groupId>com.bgsoftware</groupId>
             <artifactId>WildToolsAPI</artifactId>
-            <version>2024.1</version>
-            <scope>provided</scope>
+            <version>2025.1</version>
         </dependency>
         <!-- DeluxeSellwands -->
         <dependency>
@@ -231,13 +230,19 @@
         <dependency>
             <groupId>com.craftaro</groupId>
             <artifactId>FabledSkyBlock</artifactId>
-            <version>3.0.4-SNAPSHOT</version>
-            <scope>provided</scope>
+            <version>3.0.4</version>
         </dependency>
         <!-- PlotSquared -->
         <dependency>
             <groupId>com.intellectualsites.plotsquared</groupId>
             <artifactId>plotsquared-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- HeadDatabaseAPI -->
+        <dependency>
+            <groupId>com.arcaniax</groupId>
+            <artifactId>HeadDatabase-API</artifactId>
+            <version>1.3.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
