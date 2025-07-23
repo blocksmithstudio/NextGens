@@ -8,9 +8,13 @@ import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
+import com.muhammaddaffa.nextgens.requirements.GensRequirement;
+import com.muhammaddaffa.nextgens.requirements.impl.PermissionRequirement;
+import com.muhammaddaffa.nextgens.requirements.impl.PlaceholderRequirement;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -90,7 +94,24 @@ public class ShopInventory extends FastInv {
                     continue;
                 }
 
+                // Load purchase requirements
+                List<GensRequirement> purchaseRequirements = loadRequirement(config, key + ".purchase-requirements");
+
                 this.setItems(Utils.convertListToIntArray(slots), stack, event -> {
+                    // Check requirements first
+                    List<String> failedRequirements = checkRequirements(this.player, purchaseRequirements);
+                    if (!failedRequirements.isEmpty()) {
+                        // Send all failed requirement messages
+                        failedRequirements.forEach(message -> this.player.sendMessage(Common.color(message)));
+                        // Play bass sound
+                        Utils.bassSound(this.player);
+                        // Close inventory if configured
+                        if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("close-on-requirement-fail", false)) {
+                            this.player.closeInventory();
+                        }
+                        return;
+                    }
+
                     // money check
                     if (VaultEconomy.getBalance(this.player) < cost) {
                         NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
@@ -113,6 +134,13 @@ public class ShopInventory extends FastInv {
                     NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.gen-purchase", new Placeholder()
                             .add("{gen}", generator.displayName())
                             .add("{cost}", Common.digits(cost)));
+
+                    // Execute commands if any are specified
+                    if (!commands.isEmpty()) {
+                        commands.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command
+                                .replace("{player}", this.player.getName())));
+                    }
+
                     // close on purchase
                     if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("close-on-purchase")) {
                         this.player.closeInventory();
@@ -149,7 +177,38 @@ public class ShopInventory extends FastInv {
                         .replace("{player}", player.getName())));
             });
         }
-
     }
 
+    private List<GensRequirement> loadRequirement(FileConfiguration config, String path) {
+        List<GensRequirement> requirements = new ArrayList<>();
+        if (config.isConfigurationSection(path)) {
+            ConfigurationSection section = config.getConfigurationSection(path);
+            for (String key : section.getKeys(false)) {
+                String type = section.getString(key + ".type", "DUMMY");
+                String message = section.getString(key + ".message", "&cYou don't have the requirement to do this!");
+                switch (type.toUpperCase()) {
+                    case "PERMISSION" -> {
+                        String permission = section.getString(key + ".permission");
+                        requirements.add(new PermissionRequirement(message, permission));
+                    }
+                    case "PLACEHOLDER" -> {
+                        String placeholder = section.getString(key + ".placeholder");
+                        String value = section.getString(key + ".value");
+                        requirements.add(new PlaceholderRequirement(message, placeholder, value));
+                    }
+                }
+            }
+        }
+        return requirements;
+    }
+
+    private List<String> checkRequirements(Player player, List<GensRequirement> requirements) {
+        List<String> messages = new ArrayList<>();
+        for (GensRequirement requirement : requirements) {
+            if (!requirement.isSuccessful(player)) {
+                messages.add(requirement.getMessage());
+            }
+        }
+        return messages;
+    }
 }
