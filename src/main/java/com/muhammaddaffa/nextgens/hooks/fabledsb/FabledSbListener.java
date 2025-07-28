@@ -1,15 +1,14 @@
 package com.muhammaddaffa.nextgens.hooks.fabledsb;
 
-import com.craftaro.skyblock.api.event.island.IslandDeleteEvent;
-import com.craftaro.skyblock.api.event.island.IslandKickEvent;
-import com.craftaro.skyblock.api.event.player.PlayerIslandJoinEvent;
-import com.craftaro.skyblock.api.event.player.PlayerIslandLeaveEvent;
 import com.muhammaddaffa.mdlib.utils.Common;
-import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.refund.RefundManager;
+import com.songoda.skyblock.api.event.island.IslandDeleteEvent;
+import com.songoda.skyblock.api.event.island.IslandKickEvent;
+import com.songoda.skyblock.api.event.player.PlayerIslandJoinEvent;
+import com.songoda.skyblock.api.event.player.PlayerIslandLeaveEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
