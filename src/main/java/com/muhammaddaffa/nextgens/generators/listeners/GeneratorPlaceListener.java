@@ -49,7 +49,7 @@ public record GeneratorPlaceListener(
         }
 
         if (isPermissionDenied(player, generator, config)) {
-            notifyPermissionDenied(player, event);
+            notifyPermissionDenied(player, event, generator);
             return;
         }
 
@@ -98,9 +98,10 @@ public record GeneratorPlaceListener(
                 && !player.hasPermission("nextgens.generator.*");
     }
 
-    private void notifyPermissionDenied(Player player, BlockPlaceEvent event) {
+    private void notifyPermissionDenied(Player player, BlockPlaceEvent event, Generator generator) {
         event.setCancelled(true);
-        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.no-permission-gen");
+        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.no-permission-gen", new Placeholder()
+                .add("{gen}", generator.displayName()));
         Utils.bassSound(player);
     }
 
