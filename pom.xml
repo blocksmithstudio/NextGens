@@ -6,7 +6,7 @@
 
     <groupId>com.muhammaddaffa</groupId>
     <artifactId>NextGens</artifactId>
-    <version>1.2.12</version>
+    <version>1.3.0</version>
     <packaging>jar</packaging>
 
     <name>NextGens</name>
