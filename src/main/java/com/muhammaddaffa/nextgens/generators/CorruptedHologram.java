@@ -5,14 +5,19 @@ import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.LocationUtils;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.utils.Settings;
+import de.oliver.fancyholograms.api.FancyHologramsPlugin;
+import de.oliver.fancyholograms.api.HologramManager;
+import de.oliver.fancyholograms.api.data.TextHologramData;
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.filoghost.holographicdisplays.api.Position;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Display;
 
 import java.util.List;
+import java.util.Optional;
 
 public class CorruptedHologram {
 
@@ -46,6 +51,18 @@ public class CorruptedHologram {
         if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
             DHAPI.createHologram(this.name, this.hologramLocation, lines);
         }
+        // FancyHolograms
+        if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
+            HologramManager manager = FancyHologramsPlugin.get().getHologramManager();
+            TextHologramData hologram = new TextHologramData(this.name, this.hologramLocation);
+            hologram.setPersistent(false);
+            hologram.setBillboard(Display.Billboard.CENTER);
+            hologram.setText(lines);
+
+            de.oliver.fancyholograms.api.hologram.Hologram holograms =
+                    manager.create(hologram);
+            manager.addHologram(holograms);
+        }
     }
 
     public void destroy() {
@@ -73,6 +90,11 @@ public class CorruptedHologram {
             if (hologram != null) {
                 hologram.destroy();
             }
+        }
+        if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
+            HologramManager manager = FancyHologramsPlugin.get().getHologramManager();
+            Optional<de.oliver.fancyholograms.api.hologram.Hologram> hologram = manager.getHologram(this.name);
+            manager.removeHologram(hologram.orElse(null));
         }
     }
 
