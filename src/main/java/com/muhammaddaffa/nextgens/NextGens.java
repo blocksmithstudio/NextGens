@@ -465,10 +465,6 @@ public final class NextGens extends JavaPlugin {
         return boltAPI;
     }
 
-    /*public AxBoostersWrapper getBoosterHook() {
-        return boosterHook;
-    }*/
-
     public static NextGens getInstance() {
         return instance;
     }

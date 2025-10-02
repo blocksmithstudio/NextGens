@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.sell.listeners;
 
+import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.action.InteractAction;
 import com.muhammaddaffa.nextgens.sell.SellManager;
@@ -7,25 +8,24 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-public class HandSellListener implements Listener {
-    private final SellManager sellManager;
+public record HandSellListener(SellManager sellManager) implements Listener {
 
-    public HandSellListener(SellManager sellManager) {
-        this.sellManager = sellManager;
-    }
-
-    @EventHandler
-    private void onInteract(PlayerInteractEvent event) {
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    public void onInteract(PlayerInteractEvent event) {
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
 
         if (!config.getBoolean("hand-sell.enabled")) return;
+
+        if (event.getHand() != EquipmentSlot.HAND) return;
 
         Player player = event.getPlayer();
         Inventory inventory = player.getInventory();
@@ -36,7 +36,7 @@ public class HandSellListener implements Listener {
         if (meta == null) return;
 
         // check if it's a drop from generator
-        if (!meta.getPersistentDataContainer().has(NextGens.drop_value, PersistentDataType.STRING)) {
+        if (!meta.getPersistentDataContainer().has(NextGens.drop_value, PersistentDataType.DOUBLE)) {
             return;
         }
 
