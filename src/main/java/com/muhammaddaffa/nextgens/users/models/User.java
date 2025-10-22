@@ -1,8 +1,12 @@
 package com.muhammaddaffa.nextgens.users.models;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class User {
 
@@ -21,12 +25,16 @@ public class User {
 
     private int interval;
 
+    // member
+    private final Set<UUID> memberSet = new HashSet<>();
+    private final Map<User, Long> invitationMap = new ConcurrentHashMap<>();
+
     public User(UUID uuid) {
         this.uuid = uuid;
     }
 
     public User(UUID uuid, int bonus, double multiplier, double earnings, int itemsSold, int normalSell, int sellwandSell,
-                boolean toggleCashback, boolean toggleInventoryAutoSell, boolean toggleGensAutoSell) {
+                boolean toggleCashback, boolean toggleInventoryAutoSell, boolean toggleGensAutoSell, Set<UUID> memberSet) {
         this.uuid = uuid;
         this.bonus = bonus;
         this.multiplier = multiplier;
@@ -37,6 +45,7 @@ public class User {
         this.toggleCashback = toggleCashback;
         this.toggleInventoryAutoSell = toggleInventoryAutoSell;
         this.toggleGensAutoSell = toggleGensAutoSell;
+        this.memberSet.addAll(memberSet);
     }
 
     public UUID getUniqueId() {
@@ -194,5 +203,73 @@ public class User {
     public void setInterval(int amount) {
         this.interval = interval;
     }
+
+    public Set<UUID> getMemberSet() {
+        return memberSet;
+    }
+
+    public List<String> getMemberNames() {
+        return this.memberSet.stream()
+                .map(Bukkit::getOfflinePlayer)
+                .map(OfflinePlayer::getName)
+                .collect(Collectors.toList());
+    }
+
+    public boolean isMember(UUID uuid) {
+        if (uuid == null) return false;
+        return this.memberSet.contains(uuid);
+    }
+
+    public void addMember(UUID uuid) {
+        this.memberSet.add(uuid);
+    }
+
+    public void removeMember(UUID uuid) {
+        this.memberSet.remove(uuid);
+    }
+
+    public void clearMember() {
+        this.memberSet.clear();
+    }
+
+    public Map<User, Long> getInvitationMap() {
+        return invitationMap;
+    }
+
+    public List<User> getValidInvitation() {
+        List<User> validInvitation = new ArrayList<>();
+        // Filter the invitation
+        this.invitationMap.forEach((user, elapsed) -> {
+            // Get the elapsed time in seconds
+            long elapsedInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - elapsed);
+            if (elapsedInSeconds > 60) {
+                this.invitationMap.remove(user);
+                return;
+            }
+            validInvitation.add(user);
+        });
+        return validInvitation;
+    }
+
+    public List<String> getInvitationNames() {
+        return this.getValidInvitation().stream()
+                .map(User::getName)
+                .collect(Collectors.toList());
+    }
+
+    public boolean hasInvitation(User user) {
+        return this.getValidInvitation().stream()
+                .anyMatch(u -> u.getUniqueId().equals(user.getUniqueId()));
+    }
+
+    public void addInvitation(User user) {
+        this.invitationMap.put(user, System.currentTimeMillis());
+    }
+
+    public void removeInvitation(User user) {
+        this.invitationMap.remove(user);
+    }
+
+
 
 }

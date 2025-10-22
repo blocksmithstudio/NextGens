@@ -8,6 +8,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -40,6 +41,18 @@ public class UserManager {
 
     public List<String> getUsersName() {
         return userMap.values().stream()
+                .map(User::getName)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getUsersMemberName(Player player) {
+        User user = this.getUser(player);
+        return user.getMemberNames();
+    }
+
+    public List<String> getWhoUserAddedToPlayer(Player player) {
+        return this.userMap.values().stream()
+                .filter(user -> user.isMember(player.getUniqueId()))
                 .map(User::getName)
                 .collect(Collectors.toList());
     }

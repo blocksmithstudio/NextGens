@@ -386,8 +386,22 @@ messages:
   corrupt-gens: '&6[NextGens] &aYou have executed the corruption event!'
   invalid-user: '&6[NextGens] &cThere is no user with that name!'
   remove-all: '&6[NextGens] &aYou have removed all &e{player} &agenerators!'
-  fix-all: "&6[NextGens] &aYou have repaired all corrupted generators!"
-  fix-empty: "&6[NextGens] &cYou don't have a corrupted generators!"
+  fix-all: '&6[NextGens] &aYou have repaired all corrupted generators!'
+  fix-empty: '&6[NextGens] &cYou don''t have a corrupted generators!'
+  add-member: '&6[NextGens] &aYou have invited &e{player} &ato access your generators!'
+  player-added: '&6[NextGens] &aYou have been invited by &e{player} &ato access their
+    generators!'
+  not-member: '&6[NextGens] &e{player} &cis not a member!'
+  remove-member: '&6[NextGens] &e{player} &cis no longer your member!'
+  already-member: '&6[NextGens] &e{player} &cis already a member!'
+  player-removed: '&6[NextGens] &cYou no longer has access to &e{player} &cgenerators!'
+  self-add: '&6[NextGens] &cYou cannot add yourself!'
+  member-list:
+    - '&6[NextGens] &eMembers:'
+    - '&7{members}'
+    - ''
+    - "&7List of player added you:"
+    - '&7{member_with}' # you can use {member_with} to see who added you as a member
   help:
     - '&6&lNextGens &7- by aglerr'
     - '&6/genshop [player] &7- open up the generator shop gui'
@@ -407,4 +421,7 @@ messages:
     - '&6/gens removemultiplier <player> <amount> &7- decrease multiplier amount'
     - '&6/gens setmultiplier <player> <amount> &7- set multiplier amount'
     - '&6/gens removeall <player> &7- remove all specific player generators'
+    - '&6/gens remove <player> &7- remove specific player from the member list'
+    - '&6/gens add <player> &7- add player to the member list'
+    - '&6/gens memberlist &7- list of all members'
     - '&6/gens reload &7- reload the configuration'

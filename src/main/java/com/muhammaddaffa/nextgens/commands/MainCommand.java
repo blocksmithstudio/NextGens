@@ -21,9 +21,12 @@ import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import com.muhammaddaffa.nextgens.worth.WorthManager;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainCommand {
 
@@ -63,6 +66,9 @@ public class MainCommand {
                 .withSubcommand(this.getStartCorruptionCommand())
                 .withSubcommand(this.getViewCommand())
                 .withSubcommand(this.getRemoveAllCommand())
+                .withSubcommand(this.getAddCommand())
+                .withSubcommand(this.getRemoveCommand())
+                .withSubcommand(this.getMemberList())
                 .executes((sender, args) -> {
                     if (sender.hasPermission("nextgens.admin")) {
                         NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.help");
@@ -479,6 +485,113 @@ public class MainCommand {
                     // Send message
                     NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.remove-all", new Placeholder()
                             .add("{player}", target.getName()));
+                });
+    }
+
+    private CommandAPICommand getRemoveCommand() {
+        return new CommandAPICommand("remove")
+                .withPermission("nextgens.command.remove")
+                .withArguments(new OfflinePlayerArgument("target")
+                        .replaceSuggestions(ArgumentSuggestions.strings(info -> {
+                            Player player = (Player) info.sender();
+                            return this.userManager.getUsersMemberName(player).toArray(String[]::new);
+
+                })))
+                .executesPlayer((player, args) -> {
+
+                    // Get the target player
+                    OfflinePlayer targetPlayer = (OfflinePlayer) args.get("target");
+
+                    // Check if the target has played before
+                    if (!targetPlayer.hasPlayedBefore()) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.invalid-target");
+                        return;
+                    }
+
+                    // Get the user object
+                    User user = this.userManager.getUser(player.getUniqueId());
+                    // Check if the target user is not a member
+                    if (!user.isMember(targetPlayer.getUniqueId())) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-member", new Placeholder()
+                                .add("{player}", user.getName()));
+                        return;
+                    }
+                    // Kick the player
+                    user.removeMember(targetPlayer.getUniqueId());
+                    // Save the user data
+                    Executor.async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
+                    // Send messages
+                    NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.remove-member", new Placeholder()
+                            .add("{player}", targetPlayer.getName()));
+                    // Check if the target is online or not
+                    Player target = Bukkit.getPlayer(targetPlayer.getUniqueId());
+                    if (target != null) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(target, "messages.player-removed", new Placeholder()
+                                .add("{player}", player.getName()));
+                    }
+                });
+    }
+
+    private CommandAPICommand getAddCommand() {
+        return new CommandAPICommand("add")
+                .withArguments(new PlayerArgument("target"))
+                .executesPlayer((player, args) -> {
+                    // get the user object
+                    User user = this.userManager.getUser(player);
+                    OfflinePlayer targetPlayer = (OfflinePlayer) args.get("target");
+
+                    // check if the target has played before
+                    if (!targetPlayer.hasPlayedBefore()) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.invalid-target");
+                        return;
+                    }
+
+                    // If player and target is the same, cancel it
+                    if (player.getUniqueId().equals(targetPlayer.getUniqueId())) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.self-add");
+                        return;
+                    }
+
+                    // check if the target is already a member
+                    if (user.isMember(targetPlayer.getUniqueId())) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.already-member", new Placeholder()
+                                .add("{player}", targetPlayer.getName()));
+                        return;
+                    }
+
+                    // create an invitation
+                    user.addMember(targetPlayer.getUniqueId());
+
+                    // save the user
+                    Executor.async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
+
+                    // send message
+                    NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.add-member", new Placeholder()
+                            .add("{player}", targetPlayer.getName()));
+                    // check if the target is online
+                    if (targetPlayer.isOnline() && targetPlayer.getPlayer() != null) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(targetPlayer.getPlayer(), "messages.player-added", new Placeholder()
+                                .add("{player}", player.getName()));
+                    }
+                });
+    }
+
+    private CommandAPICommand getMemberList() {
+        return new CommandAPICommand("memberlist")
+                .withPermission("nextgens.see.memberlist")
+                .executes((sender, args) -> {
+                    Player player = (Player) sender;
+                    User user = this.userManager.getUser(player);
+                    // Send the list of all members
+                    NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.member-list", new Placeholder()
+                            .add("{members}",
+                                    user.getMemberSet().isEmpty()
+                                    ? "&cNo members"
+                                    : String.join("\n", user.getMemberNames()))
+                            .add("{member_with}",
+                                    this.userManager.getWhoUserAddedToPlayer(player).isEmpty()
+                                    ? "&cNo one added you"
+                                    : String.join("\n", this.userManager.getWhoUserAddedToPlayer(player))));
                 });
     }
 

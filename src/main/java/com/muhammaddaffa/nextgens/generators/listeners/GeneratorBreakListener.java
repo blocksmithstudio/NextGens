@@ -11,6 +11,7 @@ import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.action.InteractAction;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.users.UserManager;
+import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
 import org.bukkit.Bukkit;
@@ -94,7 +95,9 @@ public record GeneratorBreakListener(
     }
 
     private boolean isPlayerAllowedToBreak(ActiveGenerator active, Player player) {
-        return player.hasPermission("nextgens.break.others") || player.getUniqueId().equals(active.getOwner());
+        return active.getOwner().equals(player.getUniqueId()) ||
+                this.userManager.getUser(active.getOwner()).isMember(player.getUniqueId()) ||
+                player.hasPermission("nextgens.break.others");
     }
 
     private void notifyNotAllowed(Player player, ActiveGenerator active) {

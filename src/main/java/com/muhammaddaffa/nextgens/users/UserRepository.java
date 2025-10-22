@@ -9,8 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class UserRepository {
 
@@ -40,19 +40,35 @@ public class UserRepository {
     public void saveUsers(List<User> users) {
         String query = NextGens.getInstance().getDatabaseManager().isMysql() ?
                 "INSERT INTO " + DatabaseManager.USER_TABLE + " " +
-                        "(uuid, bonus, multiplier, earnings, items_sold, normal_sell, sellwand_sell, toggle_cashback, toggle_inventory_sell, toggle_gens_sell) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE " +
-                        "bonus = VALUES(bonus), multiplier = VALUES(multiplier), earnings = VALUES(earnings), " +
-                        "items_sold = VALUES(items_sold), normal_sell = VALUES(normal_sell), sellwand_sell = VALUES(sellwand_sell), " +
-                        "toggle_cashback = VALUES(toggle_cashback), toggle_inventory_sell = VALUES(toggle_inventory_sell), " +
-                        "toggle_gens_sell = VALUES(toggle_gens_sell)" :
+                        "(uuid, bonus, multiplier, earnings, items_sold, normal_sell, sellwand_sell, toggle_cashback, " +
+                        "toggle_inventory_sell, toggle_gens_sell, member_set) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                        "ON DUPLICATE KEY UPDATE " +
+                        "bonus = VALUES(bonus), " +
+                        "multiplier = VALUES(multiplier), " +
+                        "earnings = VALUES(earnings), " +
+                        "items_sold = VALUES(items_sold), " +
+                        "normal_sell = VALUES(normal_sell), " +
+                        "sellwand_sell = VALUES(sellwand_sell), " +
+                        "toggle_cashback = VALUES(toggle_cashback), " +
+                        "toggle_inventory_sell = VALUES(toggle_inventory_sell), " +
+                        "toggle_gens_sell = VALUES(toggle_gens_sell), " +
+                        "member_set = VALUES(member_set)" :
                 "INSERT INTO " + DatabaseManager.USER_TABLE + " " +
-                        "(uuid, bonus, multiplier, earnings, items_sold, normal_sell, sellwand_sell, toggle_cashback, toggle_inventory_sell, toggle_gens_sell) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(uuid) DO UPDATE SET " +
-                        "bonus = excluded.bonus, multiplier = excluded.multiplier, earnings = excluded.earnings, " +
-                        "items_sold = excluded.items_sold, normal_sell = excluded.normal_sell, sellwand_sell = excluded.sellwand_sell, " +
-                        "toggle_cashback = excluded.toggle_cashback, toggle_inventory_sell = excluded.toggle_inventory_sell, " +
-                        "toggle_gens_sell = excluded.toggle_gens_sell";
+                        "(uuid, bonus, multiplier, earnings, items_sold, normal_sell, sellwand_sell, toggle_cashback, " +
+                        "toggle_inventory_sell, toggle_gens_sell, member_set) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                        "ON CONFLICT(uuid) DO UPDATE SET " +
+                        "bonus = excluded.bonus, " +
+                        "multiplier = excluded.multiplier, " +
+                        "earnings = excluded.earnings, " +
+                        "items_sold = excluded.items_sold, " +
+                        "normal_sell = excluded.normal_sell, " +
+                        "sellwand_sell = excluded.sellwand_sell, " +
+                        "toggle_cashback = excluded.toggle_cashback, " +
+                        "toggle_inventory_sell = excluded.toggle_inventory_sell, " +
+                        "toggle_gens_sell = excluded.toggle_gens_sell, " +
+                        "member_set = excluded.member_set";
 
         try (Connection connection = dbManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -80,9 +96,13 @@ public class UserRepository {
         boolean toggleCashback = result.getBoolean(8);
         boolean toggleInventorySell = result.getBoolean(9);
         boolean toggleGensSell = result.getBoolean(10);
+        Set<UUID> memberSet = result.getString(11) != null ?
+                Arrays.stream(result.getString(11).split(";"))
+                        .map(UUID::fromString)
+                        .collect(Collectors.toSet()) : new HashSet<>();
 
         return new User(uuid, bonus, multiplier, earnings, itemsSold, normalSell,
-                sellwandSell, toggleCashback, toggleInventorySell, toggleGensSell);
+                sellwandSell, toggleCashback, toggleInventorySell, toggleGensSell, memberSet);
     }
 
     private void setStatementParameters(PreparedStatement statement, User user) throws SQLException {
@@ -96,6 +116,7 @@ public class UserRepository {
         statement.setBoolean(8, user.isToggleCashback());
         statement.setBoolean(9, user.isToggleInventoryAutoSell());
         statement.setBoolean(10, user.isToggleGensAutoSell());
+        statement.setString(11, user.getMemberSet().stream().map(UUID::toString).collect(Collectors.joining(";")));
     }
 
 }

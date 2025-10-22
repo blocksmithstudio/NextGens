@@ -13,6 +13,7 @@ import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.gui.FixInventory;
 import com.muhammaddaffa.nextgens.gui.UpgradeInventory;
 import com.muhammaddaffa.nextgens.users.UserManager;
+import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.utils.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
@@ -54,7 +55,7 @@ public record GeneratorUpgradeListener(
             // get the correct interaction type
             InteractAction required = InteractAction.find(config.getString("interaction.gens-fix"), InteractAction.SHIFT_RIGHT);
             if (action == required) {
-                if (config.getBoolean("repair-owner-only") && !player.getUniqueId().equals(active.getOwner())) {
+                if (config.getBoolean("repair-owner-only") && !this.hasAccess(active, player)) {
                     NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-owner");
                     // play bass sound
                     Utils.bassSound(player);
@@ -72,7 +73,7 @@ public record GeneratorUpgradeListener(
             return;
         }
         // check if player is the owner
-        if (!player.getUniqueId().equals(active.getOwner())) {
+        if (!this.hasAccess(active, player)) {
             NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-owner");
             // play bass sound
             Utils.bassSound(player);
@@ -95,6 +96,12 @@ public record GeneratorUpgradeListener(
         }
     }
 
-
-
+    private boolean hasAccess(ActiveGenerator active, Player player) {
+        // Get the User object of the owner
+        User user = this.userManager.getUser(active.getOwner());
+        if (user.isMember(player.getUniqueId())) {
+            return true;
+        }
+        return active.getOwner().equals(player.getUniqueId());
+    }
 }
