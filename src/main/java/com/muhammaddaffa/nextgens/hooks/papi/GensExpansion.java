@@ -5,6 +5,7 @@ import com.muhammaddaffa.mdlib.utils.TimeUtils;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.events.Event;
 import com.muhammaddaffa.nextgens.events.managers.EventManager;
+import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.generators.runnables.CorruptionTask;
 import com.muhammaddaffa.nextgens.sell.multipliers.SellMultiplierProvider;
@@ -15,6 +16,9 @@ import com.muhammaddaffa.nextgens.utils.Utils;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GensExpansion extends PlaceholderExpansion {
 
@@ -146,6 +150,19 @@ public class GensExpansion extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("event_isactive")) {
             return this.eventManager.getActiveEvent() == null ?
                     "false" : "true";
+        }
+
+        if (params.startsWith("statistics_gens_")) {
+            String generatorName = params.substring("statistics_gens_".length());
+
+            List<ActiveGenerator> generators = new ArrayList<>();
+            for (ActiveGenerator active : this.generatorManager.getActiveGenerator(player)) {
+                if (active.getGenerator().id().equalsIgnoreCase(generatorName)) {
+                    generators.add(active);
+                }
+            }
+
+            return Common.digits(generators.size());
         }
 
         return null; // Placeholder is unknown by the Expansion
