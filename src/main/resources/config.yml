@@ -332,7 +332,8 @@ world-multipliers:
     sell-multiplier: 2.0
     speed-multiplier: 30 # in percentage
     drop-multiplier: 1
-
+    whitelist-generator: # List of generator that's enabled on this world and this only affect speed-multiplier and drop-multiplier
+      - example_generator
 
 messages:
   no-permission: '&6[NextGens] &cYou don''t have permission'

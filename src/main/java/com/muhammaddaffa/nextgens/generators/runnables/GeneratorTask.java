@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class GeneratorTask extends BukkitRunnable {
@@ -128,7 +129,9 @@ public class GeneratorTask extends BukkitRunnable {
              * World multipliers code
              */
             double worldDiscount = NextGens.DEFAULT_CONFIG.getDouble("world-multipliers." + active.getLocation().getWorld().getName() + ".speed-multiplier");
-            if (worldDiscount > 0) {
+            List<String> worldEnableGenerator = NextGens.DEFAULT_CONFIG.getStringList(
+                    "world-multipliers." + active.getLocation().getWorld().getName() + ".whitelist-generator");
+            if (worldDiscount > 0 && (worldEnableGenerator.isEmpty() || worldEnableGenerator.contains(generator.id()))) {
                 double discount = (generator.interval() * worldDiscount) / 100;
                 // deduct the interval
                 interval -= discount;
