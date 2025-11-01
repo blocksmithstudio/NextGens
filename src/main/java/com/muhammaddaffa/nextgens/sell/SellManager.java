@@ -58,12 +58,19 @@ public class SellManager {
 
         // Aggregate sellable items
         for (Inventory inventory : inventories) {
-            for (ItemStack stack : inventory) {
-                Double value = api.getWorth(stack);
-                if (value == null || value <= 0) continue;
+            for (int i = 0; i < inventory.getSize(); i++) {
+                ItemStack stack = inventory.getItem(i);
+                Double worth = api.getWorth(stack);
+                // If item is worthless, just skip it
+                if (worth == null || worth <= 0) {
+                    continue;
+                }
+                // Otherwise, we should add it
                 totalItems += stack.getAmount();
-                totalValue += value;
-                stack.setAmount(0); // Remove the item
+                totalValue += worth;
+                // Remove the item completely, double remove to make sure
+                stack.setAmount(0);
+                inventory.setItem(i, null);
             }
         }
 
