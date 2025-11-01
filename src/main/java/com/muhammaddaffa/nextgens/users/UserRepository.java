@@ -96,13 +96,18 @@ public class UserRepository {
         boolean toggleCashback = result.getBoolean(8);
         boolean toggleInventorySell = result.getBoolean(9);
         boolean toggleGensSell = result.getBoolean(10);
-        Set<UUID> memberSet = result.getString(11) != null ?
-                Arrays.stream(result.getString(11).split(";"))
-                        .map(UUID::fromString)
-                        .collect(Collectors.toSet()) : new HashSet<>();
+
+        String memberSet = result.getString(11);
+        Set<UUID> memberSetUUID = (memberSet == null || memberSet.isEmpty())
+                ? Set.of()
+                : Arrays.stream(memberSet.split(";"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(UUID::fromString)
+                .collect(Collectors.toSet());
 
         return new User(uuid, bonus, multiplier, earnings, itemsSold, normalSell,
-                sellwandSell, toggleCashback, toggleInventorySell, toggleGensSell, memberSet);
+                sellwandSell, toggleCashback, toggleInventorySell, toggleGensSell, memberSetUUID);
     }
 
     private void setStatementParameters(PreparedStatement statement, User user) throws SQLException {
