@@ -121,7 +121,10 @@ public class UserRepository {
         statement.setBoolean(8, user.isToggleCashback());
         statement.setBoolean(9, user.isToggleInventoryAutoSell());
         statement.setBoolean(10, user.isToggleGensAutoSell());
-        statement.setString(11, user.getMemberSet().stream().map(UUID::toString).collect(Collectors.joining(";")));
+        Set<UUID> memberSet = user.getMemberSet();
+        statement.setString(11, memberSet.isEmpty() ? "" : memberSet.stream()
+                .map(UUID::toString)
+                .collect(Collectors.joining(";")));
     }
 
 }
