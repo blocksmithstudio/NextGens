@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.sellwand.managers.SellwandManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
@@ -50,6 +51,17 @@ public class SellwandListener implements Listener {
         }
 
         event.setCancelled(true);
+
+        // Check if player is in the same chunk
+        if (NextGens.DEFAULT_CONFIG.getBoolean("sellwand.force-same-chunk")) {
+            Chunk playerChunk = player.getLocation().getChunk();
+            Chunk blockChunk = block.getChunk();
+            // If it's the same we should return
+            if (!playerChunk.equals(blockChunk)) {
+                NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.sellwand-same-chunk");
+                return;
+            }
+        }
 
         // Advanced Chests API Hook
         if (Bukkit.getPluginManager().isPluginEnabled("AdvancedChests")) {

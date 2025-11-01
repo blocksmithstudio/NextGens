@@ -194,6 +194,8 @@ sellwand:
   hooks:
     # Should we hook with wild tools?
     wildtools: true
+  # Force player to sell container in the same chunk
+  force-same-chunk: false
   # The text that will be used for unlimited uses
   unlimited-placeholder: "Unlimited"
   # The sellwand item configuration
@@ -397,6 +399,7 @@ messages:
   already-member: '&6[NextGens] &e{player} &cis already a member!'
   player-removed: '&6[NextGens] &cYou no longer has access to &e{player} &cgenerators!'
   self-add: '&6[NextGens] &cYou cannot add yourself!'
+  sellwand-same-chunk: '&6[NextGens] &cYou can only use sellwand on a block that is in the same chunk as you.'
   member-list:
     - '&6[NextGens] &eMembers:'
     - '&7{members}'
