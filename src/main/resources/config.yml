@@ -401,11 +401,8 @@ messages:
   self-add: '&6[NextGens] &cYou cannot add yourself!'
   sellwand-same-chunk: '&6[NextGens] &cYou can only use sellwand on a block that is in the same chunk as you.'
   member-list:
-    - '&6[NextGens] &eMembers:'
-    - '&7{members}'
-    - ''
-    - "&7List of player added you:"
-    - '&7{member_with}' # you can use {member_with} to see who added you as a member
+    - '&6[NextGens] &eThese players have access to your generators: &7{members}'
+    - '&6[NextGens] &eAlso, you have access to &7{member_with} &egenerators.'
   help:
     - '&6&lNextGens &7- by aglerr'
     - '&6/genshop [player] &7- open up the generator shop gui'
