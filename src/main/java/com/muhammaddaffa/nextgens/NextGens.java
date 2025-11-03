@@ -3,11 +3,11 @@ package com.muhammaddaffa.nextgens;
 import com.bgsoftware.wildtools.api.WildToolsAPI;
 import com.muhammaddaffa.mdlib.MDLib;
 import com.muhammaddaffa.mdlib.configupdater.ConfigUpdater;
+import com.muhammaddaffa.mdlib.updatechecker.UpdateCheckSource;
+import com.muhammaddaffa.mdlib.updatechecker.UpdateChecker;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Logger;
-import com.muhammaddaffa.mdlib.utils.updatechecker.UpdateCheckSource;
-import com.muhammaddaffa.mdlib.utils.updatechecker.UpdateChecker;
 import com.muhammaddaffa.nextgens.api.GeneratorAPI;
 import com.muhammaddaffa.nextgens.autosell.AutosellManager;
 import com.muhammaddaffa.nextgens.commands.*;
@@ -353,13 +353,13 @@ public final class NextGens extends JavaPlugin {
 
     private void commands() {
         // register commands
-        MainCommand.register(this.generatorManager, this.userManager, this.eventManager, this.worthManager, this.sellwandManager);
-        SellCommand.register(this.userManager);
-        ShopCommand.register(this.generatorManager);
-        PickupCommand.register(this.generatorManager);
-        WorthCommand.registerThis();
-        PlayerSettingsCommand.register(this.userManager);
-        RepairGensCommand.register(this.generatorManager);
+        MainCommand.registerCommand(this.generatorManager, this.userManager, this.eventManager, this.worthManager, this.sellwandManager);
+        PickupCommand.registerCommand(this.generatorManager);
+        PlayerSettingsCommand.registerCommand(this.userManager);
+        RepairGensCommand.registerCommand(this.generatorManager);
+        SellCommand.registerCommand();
+        ShopCommand.registerCommand(this.generatorManager);
+        WorthCommand.registerCommand();
     }
 
     private void connectMetrics() {

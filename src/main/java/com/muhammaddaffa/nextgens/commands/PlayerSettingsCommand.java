@@ -1,49 +1,41 @@
 package com.muhammaddaffa.nextgens.commands;
 
-import com.muhammaddaffa.mdlib.commandapi.CommandAPICommand;
+import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.gui.PlayerSettingsInventory;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
-import java.util.List;
+public class PlayerSettingsCommand extends RoutedCommand {
 
-public class PlayerSettingsCommand {
-
-    public static void register(UserManager userManager) {
+    public static void registerCommand(UserManager manager) {
         // check if the command is enabled
-        if (!NextGens.DEFAULT_CONFIG.getConfig().getBoolean("commands.player_settings.enabled")) {
-            return;
+        FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
+        if (config.getBoolean("commands.player_settings.enabled")) {
+            String command = config.getString("commands.player_settings.command");
+            new PlayerSettingsCommand(command, manager);
         }
-        PlayerSettingsCommand command = new PlayerSettingsCommand(userManager);
-        // register the command
-        command.register();
     }
 
-    private final UserManager userManager;
-    private final CommandAPICommand command;
+    public PlayerSettingsCommand(String command, UserManager manager) {
+        super(command, "nextgens.settings");
 
-    public PlayerSettingsCommand(UserManager userManager) {
-        this.userManager = userManager;
-
-        // get variables we need
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
-        String mainCommand = config.getString("commands.player_settings.command");
-        List<String> aliases = config.getStringList("commands.player_settings.aliases");
+        // Set the aliases
+        alias(config.getStringList("commands.player_settings.aliases"));
 
-        // set the command
-        this.command = new CommandAPICommand(mainCommand)
-                .withPermission("nextgens.settings")
-                .executesPlayer((player, args) -> {
-                    PlayerSettingsInventory.openInventory(player, this.userManager);
+        // Configure the root command
+        root()
+                .exec((sender, ctx) -> {
+                    if (sender instanceof Player player) {
+                        PlayerSettingsInventory.openInventory(player, manager);
+                    }
                 });
 
-        // set aliases
-        this.command.setAliases(aliases.toArray(String[]::new));
-    }
+        // Register this command
+        register();
 
-    public void register() {
-        this.command.register();
     }
 
 }
