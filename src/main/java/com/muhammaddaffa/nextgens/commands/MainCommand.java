@@ -13,6 +13,7 @@ import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.worth.WorthManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
@@ -46,12 +47,9 @@ public class MainCommand extends RoutedCommand {
         alias(config.getStringList("commands.nextgens.aliases"));
 
         // Set the root command
-        root()
-                .exec((sender, ctx) -> {
-                    if (sender.hasPermission("nextgens.admin")) {
-                        NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.help");
-                    }
-                });
+        root().exec((sender, ctx) -> help(sender));
+        // Add a help command
+        sub("help").exec((sender, ctx) -> help(sender));
 
         // Register the sub commands
         AddMultiplierCommand.handle(sub("addmultiplier"), userManager);
@@ -78,6 +76,14 @@ public class MainCommand extends RoutedCommand {
 
         // Register this command
         register();
+    }
+
+    private void help(CommandSender sender) {
+        if (sender.hasPermission("nextgens.admin")) {
+            NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.help");
+        } else {
+            NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.help-normal");
+        }
     }
 
 }

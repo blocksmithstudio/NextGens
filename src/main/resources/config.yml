@@ -403,6 +403,17 @@ messages:
   member-list:
     - '&6[NextGens] &eThese players have access to your generators: &7{members}'
     - '&6[NextGens] &eAlso, you have access to &7{member_with} &egenerators.'
+  help-normal:
+    - '&6&lNextGens &7- by aglerr'
+    - '&6/genshop &7- open up the generator shop gui.'
+    - '&6/pickupgens &7- pickup all of your generators.'
+    - '&6/repairgens &7- repair all of your generators.'
+    - '&6/sell &7- sell your inventory contents'
+    - '&6/itemworth &7- check the worth of the item that you hold'
+    - '&6/gens view &7- view all of your generators in a gui'
+    - '&6/gens trust add <player> &7- trust a player to access your gens'
+    - '&6/gens trust remove <player> &7- untrust player from accessing your gens'
+    - '&6/gens trust list &7- show the players that you trust'
   help:
     - '&6&lNextGens &7- by aglerr'
     - '&6/genshop [player] &7- open up the generator shop gui'
