@@ -26,7 +26,7 @@ public class User {
     private int interval;
 
     // member
-    private final Set<UUID> memberSet = new HashSet<>();
+    private final Set<UUID> memberSet = ConcurrentHashMap.newKeySet();
     private final Map<User, Long> invitationMap = new ConcurrentHashMap<>();
 
     public User(UUID uuid) {
@@ -220,12 +220,32 @@ public class User {
         return this.memberSet.contains(uuid);
     }
 
+    public boolean isMember(String playerName) {
+        for (String member : getMemberNames()) {
+            if (member.equalsIgnoreCase(playerName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void addMember(UUID uuid) {
         this.memberSet.add(uuid);
     }
 
     public void removeMember(UUID uuid) {
         this.memberSet.remove(uuid);
+    }
+
+    public void removeMember(String playerName) {
+        for (UUID id : memberSet) {
+            String name = Bukkit.getOfflinePlayer(id).getName();
+            if (name != null) {
+                if (name.equalsIgnoreCase(playerName)) {
+                    memberSet.remove(id);
+                }
+            }
+        }
     }
 
     public void clearMember() {
