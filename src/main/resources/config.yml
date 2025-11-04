@@ -107,6 +107,10 @@ commands:
   repair_gens:
     command: repairgens
     aliases: [repairgen, genrepair, gensrepair]
+  upgrade_gens:
+    enabled: true
+    command: upgradegens
+    aliases: []
 
 # What is the default max generator for every player
 default-max-generator:
@@ -150,8 +154,9 @@ close-on-no-money: false
 drop-on-break: false
 # Should /pickupgens pickup broken generator?
 broken-pickup: true
-# Should we allow animation when breaking generator?
-animation-break: true
+# True = if player need to break the block to pick up generators
+# False = if player just need a single left click tap to pick up generator
+animation-break: false
 # Should a broken generator can only be repaired by the owner of the generator?
 repair-owner-only: true
 # Should we set the block if the block type isn't matching with the generator?
@@ -400,12 +405,14 @@ messages:
   player-removed: '&6[NextGens] &cYou no longer has access to &e{player} &cgenerators!'
   self-add: '&6[NextGens] &cYou cannot add yourself!'
   sellwand-same-chunk: '&6[NextGens] &cYou can only use sellwand on a block that is in the same chunk as you.'
+  upgrade-total-spent: '&6[NextGens] &7You have spent &2&l$&a{amount_short} &7upgrading &a{successful_upgrade} &7generators to {generator}'
   member-list:
     - '&6[NextGens] &eThese players have access to your generators: &7{members}'
     - '&6[NextGens] &eAlso, you have access to &7{member_with} &egenerators.'
   help-normal:
     - '&6&lNextGens &7- by aglerr'
     - '&6/genshop &7- open up the generator shop gui.'
+    - '&6/upgradegens &7- open up a menu to help you upgrade your generators'
     - '&6/pickupgens &7- pickup all of your generators.'
     - '&6/repairgens &7- repair all of your generators.'
     - '&6/sell &7- sell your inventory contents'

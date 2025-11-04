@@ -1,0 +1,60 @@
+# The title and size of the gui
+title: "Upgrade Generators"
+size: 45
+
+# Slots used for the items
+item-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
+
+# Upgrading speed in ticks
+upgrade-speed: 5
+
+# Stop after one full pass over the list?
+stop-when-finished: true
+
+# The lores for each gens
+lore:
+  - "&7{amount} gens &8({amount_short} gens)"
+  - "&7"
+  - "&fOne gen: &2&l$&a{cost_short}"
+  - "&fTotal: &2&l$&a{total_cost_short}"
+  - "&7"
+  - "&fLeft Click: &eUpgrade one"
+  - "&fRight Click: &eUpgrade all"
+
+# Upgrade progress item
+upgrade-progress:
+  material: BARRIER
+  display-name: "&cPlease wait"
+  lore:
+    - "&7&oUpgrading gens..."
+    - "&7&oProgress: {upgraded}/{total}"
+
+# List of additional items
+items:
+  next-page:
+    type: NEXT_PAGE
+    material: TIPPED_ARROW
+    display-name: "&aNext Page"
+    slots: [26]
+    lore:
+      - "&7Click to go to the next page!"
+    color:
+      r: 0
+      g: 255
+      b: 0
+  previous-page:
+    type: PREVIOUS_PAGE
+    material: TIPPED_ARROW
+    display-name: "&cPrevious Page"
+    slots: [18]
+    lore:
+      - "&7Click to go to the previous page!"
+    color:
+      r: 255
+      g: 0
+      b: 0
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    display-name: "&7"
+    slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 27, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
+    lore: []
