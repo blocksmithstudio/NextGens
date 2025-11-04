@@ -63,7 +63,7 @@ items:
     page: 1
     cost: 200
     material: PUMPKIN
-    display-name: "#2CD842&lMelon Generator"
+    display-name: "#FB913B&lPumpkin Generator"
     glowing: false
     slots: [12]
     lore:
