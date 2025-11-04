@@ -9,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public record Generator(
         String id,
@@ -38,11 +40,27 @@ public record Generator(
     }
 
     public Drop getRandomDrop() {
-        for (Drop drop : this.drops)
-            if (drop.shouldUse())
-                return drop;
+        if (drops == null || drops.isEmpty())
+            return null;
 
-        return null;
+        // Prepare a list where each Drop is added multiple times based on its chance
+        List<Drop> weightedList = new ArrayList<>();
+
+        for (Drop drop : drops) {
+            int entries = (int) Math.round(drop.chance());
+            for (int i = 0; i < entries; i++) {
+                weightedList.add(drop);
+            }
+        }
+
+        if (weightedList.isEmpty())
+            return null;
+
+        // Shuffle to add randomness
+        Collections.shuffle(weightedList);
+
+        // Pick one random entry
+        return weightedList.get(ThreadLocalRandom.current().nextInt(weightedList.size()));
     }
 
     @Nullable
