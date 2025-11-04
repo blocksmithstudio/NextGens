@@ -49,7 +49,7 @@ public class EventManager {
         Event event = list.get(ThreadLocalRandom.current().nextInt(list.size()));
         // check for chance
         // check for is only command
-        if (event.getChance() > ThreadLocalRandom.current().nextDouble(101) || event.isOnlyByCommand()) {
+        if (ThreadLocalRandom.current().nextDouble(100.0) < event.getChance() || event.isOnlyByCommand()) {
             return this.getRandomEvent();
         }
         // check for same event
