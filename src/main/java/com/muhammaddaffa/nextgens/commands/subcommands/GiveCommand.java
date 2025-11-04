@@ -19,7 +19,9 @@ public class GiveCommand {
     public static void handle(RoutedCommand.CommandPlan plan, GeneratorManager manager) {
         plan.perm("nextgens.admin")
                 .arg("target", new OnlinePlayerArg())
-                .arg("id", new StringArg(), ArgSuggester.ofList(new ArrayList<>(manager.getGeneratorIDs())))
+                .arg("id", new StringArg(), ArgSuggester.ofDynamic((sender, prefix) -> {
+                    return new ArrayList<>(manager.getGeneratorIDs());
+                }))
                 .argOptional("amount", new IntArg())
                 .exec((sender, ctx) -> {
                     Player target = ctx.get("target", Player.class);

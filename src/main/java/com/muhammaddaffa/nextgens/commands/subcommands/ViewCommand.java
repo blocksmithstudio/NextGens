@@ -16,7 +16,9 @@ public class ViewCommand {
                               GeneratorManager generatorManager,
                               UserManager userManager) {
         plan.perm("nextgens.view")
-                .argOptional("name", new StringArg(), ArgSuggester.ofList(userManager.getUsersName()))
+                .argOptional("name", new StringArg(), ArgSuggester.ofDynamic((sender, prefix) -> {
+                    return userManager.getUsersName();
+                }))
                 .exec((sender, ctx) -> {
                     if (!(sender instanceof Player player))
                         return;
