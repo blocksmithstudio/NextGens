@@ -92,6 +92,14 @@ public class UpgradeInventory extends FastInv {
 
         // set the item
         this.setItems(slots, builder.build(), event -> {
+            // Need to do a check if active generator still exists
+            // to prevent dupe, was reported by one of our customers
+            ActiveGenerator refresh = generatorManager.getActiveGenerator(active.getLocation());
+            if (refresh == null) {
+                player.closeInventory();
+                return;
+            }
+
             GeneratorUpdateHelper.upgradeGenerator(player, active, generator, nextGenerator);
             this.player.closeInventory();
         });

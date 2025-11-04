@@ -88,9 +88,18 @@ public record GeneratorUpgradeListener(
         Generator nextGenerator = this.generatorManager.getGenerator(generator.nextTier());
         // upgrade gui option
         if (config.getBoolean("upgrade-gui")) {
-            // create the gui object
-            new UpgradeInventory(player, active, generator, nextGenerator, this.generatorManager, this.userManager)
-                    .open(player);
+            // Need to do a check if active generator still exists
+            // to prevent dupe, was reported by one of our customers
+            // Add a delay for the upgrade gui
+            Executor.sync(() -> {
+                ActiveGenerator refresh = generatorManager.getActiveGenerator(block);
+                if (refresh != null) {
+                    // create the gui object
+                    new UpgradeInventory(player, active, generator, nextGenerator, this.generatorManager, this.userManager)
+                            .open(player);
+                }
+            });
+
         } else {
             GeneratorUpdateHelper.upgradeGenerator(player, active, generator, nextGenerator);
         }
