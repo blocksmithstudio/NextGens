@@ -94,7 +94,8 @@ public class CorruptedHologram {
         if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
             HologramManager manager = FancyHologramsPlugin.get().getHologramManager();
             Optional<de.oliver.fancyholograms.api.hologram.Hologram> hologram = manager.getHologram(this.name);
-            manager.removeHologram(hologram.orElse(null));
+            // Remove hologram if present
+            hologram.ifPresent(manager::removeHologram);
         }
     }
 
