@@ -50,7 +50,7 @@ public class GeneratorManager {
 
     private final Map<ChunkCoord, List<String>> generatorsByChunk = new ConcurrentHashMap<>();
 
-    private final Map<UUID, Integer> generatorCount = new HashMap<>();
+    private final Map<UUID, Set<String>> generatorCount = new HashMap<>();
 
     private final DatabaseManager dbm;
     public GeneratorManager(DatabaseManager dbm) {
@@ -109,23 +109,32 @@ public class GeneratorManager {
     }
 
     public int getGeneratorCount(UUID uuid) {
-        return this.generatorCount.getOrDefault(uuid, 0);
+        return this.generatorCount.getOrDefault(uuid, new HashSet<>()).size();
     }
 
-    public void addGeneratorCount(Player player, int amount) {
-        this.addGeneratorCount(player.getUniqueId(), amount);
+    public void addGeneratorCount(UUID uuid, ActiveGenerator active) {
+        addGeneratorCount(uuid, active.getLocation());
     }
 
-    public void addGeneratorCount(UUID uuid, int amount) {
-        this.generatorCount.put(uuid, this.generatorCount.getOrDefault(uuid, 0) + amount);
+    public void addGeneratorCount(UUID uuid, Location location) {
+        if (location == null) return;
+        addGeneratorCount(uuid, LocationUtils.serialize(location));
     }
 
-    public void removeGeneratorCount(Player player, int amount) {
-        this.removeGeneratorCount(player.getUniqueId(), amount);
+    public void addGeneratorCount(UUID uuid, String serializedLocation) {
+        this.generatorCount.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(serializedLocation);
     }
 
-    public void removeGeneratorCount(UUID uuid, int amount) {
-        this.generatorCount.put(uuid, this.generatorCount.getOrDefault(uuid, 0) - amount);
+    public void removeGeneratorCount(UUID uuid, ActiveGenerator active) {
+        removeGeneratorCount(uuid, active.getLocation());
+    }
+
+    public void removeGeneratorCount(UUID uuid, Location location) {
+        this.removeGeneratorCount(uuid, LocationUtils.serialize(location));
+    }
+
+    public void removeGeneratorCount(UUID uuid, String serializedLocation) {
+        this.generatorCount.getOrDefault(uuid, new HashSet<>()).remove(serializedLocation);
     }
 
     public Collection<ActiveGenerator> getActiveGenerator() {
@@ -173,7 +182,7 @@ public class GeneratorManager {
             active = new ActiveGenerator(owner, block.getLocation(), generator);
             this.activeGenerators.put(serialized, active);
             // add generator count
-            this.addGeneratorCount(owner, 1);
+            this.addGeneratorCount(owner, serialized);
         } else {
             // change the generator id
             active.setGenerator(generator);
@@ -181,6 +190,8 @@ public class GeneratorManager {
             Executor.syncLater(2L, () -> block.setType(generator.item().getType()));
         }
         ActiveGenerator finalActive = active;
+        // Add generator to the chunk coord
+        addChunkCoord(finalActive);
         // save the generator on the database
         Executor.async(() -> this.dbm.saveGenerator(finalActive));
         return active;
@@ -204,7 +215,9 @@ public class GeneratorManager {
             // force remove
             GeneratorTask.destroy(removed);
             // remove the generator count
-            this.removeGeneratorCount(removed.getOwner(), 1);
+            this.removeGeneratorCount(removed.getOwner(), removed);
+            // Remove from the chunk coord
+            removeChunkCoord(removed);
             // remove the generator from the database
             Executor.async(() -> this.dbm.deleteGenerator(removed));
         }
@@ -293,21 +306,46 @@ public class GeneratorManager {
                 if (uuidString == null) {
                     continue;
                 }
-                // Add the generator count
-                addGeneratorCount(UUID.fromString(uuidString), 1);
                 // Load the chunk coords
                 String serialized = result.getString(2);
                 Location location = LocationUtils.deserialize(serialized);
                 ChunkCoord coord = ChunkCoord.fromLocation(location);
+                // Add the generator count
+                addGeneratorCount(UUID.fromString(uuidString), serialized);
                 // Store the data into the map
                 this.generatorsByChunk
                         .computeIfAbsent(coord, k -> new ArrayList<>())
                         .add(serialized);
-
             }
             // send log message
             Logger.info("Successfully stored chunk coords for " + this.generatorsByChunk.size() + " active generators!");
         });
+    }
+
+    public void addChunkCoord(ActiveGenerator active) {
+        addChunkCoord(active.getLocation());
+    }
+
+    public void addChunkCoord(Location location) {
+        if (location == null) return;
+
+        ChunkCoord coord = ChunkCoord.fromLocation(location);
+        this.generatorsByChunk
+                .computeIfAbsent(coord, k -> new ArrayList<>())
+                .add(LocationUtils.serialize(location));
+    }
+
+    public void removeChunkCoord(ActiveGenerator active) {
+        removeChunkCoord(active.getLocation());
+    }
+
+    public void removeChunkCoord(Location location) {
+        if (location == null) return;
+
+        ChunkCoord coord = ChunkCoord.fromLocation(location);
+        this.generatorsByChunk
+                .computeIfAbsent(coord, k -> new ArrayList<>())
+                .remove(LocationUtils.serialize(location));
     }
 
     public Map<ChunkCoord, List<String>> getGeneratorsByChunk() {
