@@ -15,8 +15,7 @@ items:
     display-name: "&6Cashback Notification"
     slots: [ 11 ]
     lore:
-      - "&7Turning this on will sell resources"
-      - "&7inside your inventory automatically"
+      - "&7Toggle receive cashback message"
       - "&7"
       - "  &6* &7Status: {status_cashback}"
       - "&7"
