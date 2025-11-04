@@ -8,14 +8,13 @@ import com.muhammaddaffa.mdlib.xseries.XSound;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
-import com.muhammaddaffa.nextgens.gui.helpers.ViewPagination;
+import com.muhammaddaffa.nextgens.gui.helpers.Pagination;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -36,7 +35,7 @@ public class ViewInventory extends FastInv {
     private final GeneratorManager generatorManager;
     private final UserManager userManager;
 
-    private ViewPagination pagination;
+    private Pagination<ActiveGenerator> pagination;
 
     public ViewInventory(Player player, User user, GeneratorManager generatorManager, UserManager userManager) {
         super(NextGens.VIEW_GUI_CONFIG.getInt("size"), Common.color(NextGens.VIEW_GUI_CONFIG.getString("title")
@@ -54,7 +53,7 @@ public class ViewInventory extends FastInv {
         List<ActiveGenerator> generators = this.generatorManager.getActiveGenerator(user.getUniqueId());
         List<Integer> slots = config.getIntegerList("slots");
         if (this.pagination == null) {
-            this.pagination = new ViewPagination(generators, slots);
+            this.pagination = new Pagination<>(generators, slots);
         }
 
         // clear the inventory first
@@ -103,7 +102,7 @@ public class ViewInventory extends FastInv {
 
                 // update the gui
                 int currentPage = this.pagination.currentPage;
-                this.pagination = new ViewPagination(this.generatorManager.getActiveGenerator(this.user.getUniqueId()), slots);
+                this.pagination = new Pagination<>(this.generatorManager.getActiveGenerator(this.user.getUniqueId()), slots);
                 if (this.pagination.getItems(currentPage) != null) {
                     this.pagination.currentPage = currentPage;
                 }
@@ -126,14 +125,14 @@ public class ViewInventory extends FastInv {
 
                     // check the type
                     if (type.equalsIgnoreCase("next_page")) {
-                        if (this.pagination == null || !this.pagination.nextPage()) return;
+                        if (this.pagination == null || !this.pagination.hasNextPage()) return;
                         this.pagination.currentPage++;
                         this.setAllItems();
                         return;
                     }
 
                     if (type.equalsIgnoreCase("previous_page")) {
-                        if (this.pagination == null || !this.pagination.nextPage()) return;
+                        if (this.pagination == null || !this.pagination.hasNextPage()) return;
                         this.pagination.currentPage--;
                         this.setAllItems();
                     }
