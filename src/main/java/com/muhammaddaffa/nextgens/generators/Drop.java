@@ -27,32 +27,55 @@ public record Drop(
         List<String> commands
 ) {
 
-    public static Drop fromConfig(String id, String key, ConfigurationSection section) {
-        double chance = section.getDouble("chance");
+    public static Drop fromConfig(String generatorId, String dropKey, ConfigurationSection section) {
+        if (section == null) {
+            Logger.warning("Drop parse failed for gen=" + generatorId + " key=" + dropKey + " -> section is null");
+            return null;
+        }
+
+        double chance = section.getDouble("chance", 0.0D);
         Double sellValue = section.get("sell-value") == null ? null : section.getDouble("sell-value");
 
-        ItemBuilder builder = ItemBuilder.fromConfig(section.getConfigurationSection("item"));
-        ItemStack stack = builder == null ? null : builder.build();
-        ItemMeta meta = stack.getItemMeta();
-        if (meta == null) return null;
+        ConfigurationSection itemSection = section.getConfigurationSection("item");
+        if (itemSection == null) {
+            Logger.warning("Drop parse failed for gen=" + generatorId + " key=" + dropKey + " -> 'item' section missing");
+            return null;
+        }
+
+        ItemBuilder itemBuilder = ItemBuilder.fromConfig(itemSection);
+        if (itemBuilder == null) {
+            Logger.warning("Drop parse failed for gen=" + generatorId + " key=" + dropKey + " -> ItemBuilder.fromConfig returned null");
+            return null;
+        }
+
+        ItemStack builtStack = itemBuilder.build();
+        if (builtStack == null) {
+            Logger.warning("Drop parse failed for gen=" + generatorId + " key=" + dropKey + " -> ItemBuilder.build returned null");
+            return null;
+        }
+
+        ItemMeta itemMeta = builtStack.getItemMeta();
+        if (itemMeta == null) {
+            Logger.warning("Drop parse failed for gen=" + generatorId + " key=" + dropKey + " -> ItemMeta is null");
+            return null;
+        }
 
         String modelItemString = section.getString("item.item-model");
-
-        if (modelItemString != null) {
+        if (modelItemString != null && !modelItemString.isEmpty()) {
             String[] parts = modelItemString.split(":", 2);
             if (parts.length == 2) {
                 NamespacedKey modelItem = new NamespacedKey(parts[0], parts[1]);
-                meta.setItemModel(modelItem);
-                stack.setItemMeta(meta);
+                itemMeta.setItemModel(modelItem);
+                builtStack.setItemMeta(itemMeta);
             } else {
-                Logger.warning("Invalid model item format for drop " + id + " with key " + key);
+                Logger.warning("Invalid 'item.item-model' for gen=" + generatorId + " key=" + dropKey + " -> '" + modelItemString + "'");
             }
         }
 
         List<String> commands = section.getStringList("commands");
-
-        return new Drop(id + "_" + key, chance, stack, sellValue, commands);
+        return new Drop(generatorId + "_" + dropKey, chance, builtStack, sellValue, commands);
     }
+
 
     public boolean shouldUse() {
         return ThreadLocalRandom.current().nextDouble(101) <= this.chance();
