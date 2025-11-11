@@ -456,7 +456,17 @@ public class GeneratorManager {
                 if (dropSection == null) {
                     continue;
                 }
-                drops.add(Drop.fromConfig(id, key, dropSection));
+                try {
+                    Drop drop = Drop.fromConfig(id, key, dropSection);
+                    if (drop == null) {
+                        Logger.warning("Failed to load drop " + key + " for generator " + id);
+                        continue;
+                    }
+                    drops.add(drop);
+                } catch (Exception e) {
+                    Logger.warning("Exception while loading drop '" + key + "' for generator '" + id + "': " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
             }
         }
 
