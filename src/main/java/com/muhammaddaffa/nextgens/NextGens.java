@@ -309,7 +309,7 @@ public final class NextGens extends JavaPlugin {
         File eventsFile = new File(this.getDataFolder(), "events.yml");
 
         try {
-            ConfigUpdater.update(this, "config.yml", configFile, List.of("sell-options.sound"));
+            ConfigUpdater.update(this, "config.yml", configFile, List.of("sell-options.sound", "world-multipliers"));
             ConfigUpdater.update(this, "events.yml", eventsFile, List.of("events.events"));
         } catch (IOException ex) {
             Logger.severe("Failed to update the config.yml!");
