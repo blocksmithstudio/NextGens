@@ -341,6 +341,7 @@ public final class NextGens extends JavaPlugin {
         pm.registerEvents(new GeneratorPreventionListener(this.generatorManager), this);
         pm.registerEvents(new GeneratorUpgradeListener(this.generatorManager, this.userManager), this);
         pm.registerEvents(new GeneratorLoadChunkListener(this.generatorManager), this);
+        pm.registerEvents(new GeneratorDupeFixListener(), this);
         // first join
         pm.registerEvents(new PlayerJoinListener(this.generatorManager), this);
         // sellwand

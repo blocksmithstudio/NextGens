@@ -1,9 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.listeners;
 
-import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
-import com.muhammaddaffa.mdlib.utils.*;
 import com.muhammaddaffa.nextgens.NextGens;
-import com.muhammaddaffa.nextgens.api.events.generators.GeneratorUpgradeEvent;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.action.InteractAction;
@@ -15,8 +12,6 @@ import com.muhammaddaffa.nextgens.gui.UpgradeInventory;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.utils.*;
-import org.bukkit.Bukkit;
-import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -91,15 +86,10 @@ public record GeneratorUpgradeListener(
             // Need to do a check if active generator still exists
             // to prevent dupe, was reported by one of our customers
             // Add a delay for the upgrade gui
-            Executor.sync(() -> {
-                ActiveGenerator refresh = generatorManager.getActiveGenerator(block);
-                if (refresh != null) {
-                    // create the gui object
-                    new UpgradeInventory(player, active, generator, nextGenerator, this.generatorManager, this.userManager)
-                            .open(player);
-                }
-            });
-
+            GeneratorDupeFixListener.delayMap.put(player.getUniqueId(), System.currentTimeMillis());
+            // Actually open the gui
+            new UpgradeInventory(player, active, generator, nextGenerator, this.generatorManager, this.userManager)
+                    .open(player);
         } else {
             GeneratorUpdateHelper.upgradeGenerator(player, active, generator, nextGenerator);
         }
