@@ -31,26 +31,29 @@ public record Drop(
         double chance = section.getDouble("chance");
         Double sellValue = section.get("sell-value") == null ? null : section.getDouble("sell-value");
 
-        ItemBuilder builder = ItemBuilder.fromConfig(section.getConfigurationSection("item"));
-        ItemStack stack = builder == null ? null : builder.build();
-        ItemMeta meta = stack.getItemMeta();
-        if (meta == null) return null;
+        ItemStack stack = null;
+        if (section.isConfigurationSection("item")) {
+            ItemBuilder builder = ItemBuilder.fromConfig(section.getConfigurationSection("item"));
+            stack = builder == null ? null : builder.build();
+            if (stack != null) {
+                ItemMeta meta = stack.getItemMeta();
+                if (meta == null) return null;
 
-        String modelItemString = section.getString("item.item-model");
-
-        if (modelItemString != null) {
-            String[] parts = modelItemString.split(":", 2);
-            if (parts.length == 2) {
-                NamespacedKey modelItem = new NamespacedKey(parts[0], parts[1]);
-                meta.setItemModel(modelItem);
-                stack.setItemMeta(meta);
-            } else {
-                Logger.warning("Invalid model item format for drop " + id + " with key " + key);
+                String modelItemString = section.getString("item.item-model");
+                if (modelItemString != null) {
+                    String[] parts = modelItemString.split(":", 2);
+                    if (parts.length == 2) {
+                        NamespacedKey modelItem = new NamespacedKey(parts[0], parts[1]);
+                        meta.setItemModel(modelItem);
+                        stack.setItemMeta(meta);
+                    } else {
+                        Logger.warning("Invalid model item format for drop " + id + " with key " + key);
+                    }
+                }
             }
         }
 
         List<String> commands = section.getStringList("commands");
-
         return new Drop(id + "_" + key, chance, stack, sellValue, commands);
     }
 
