@@ -6,6 +6,7 @@ import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.event.EventHandler;
@@ -15,6 +16,8 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -25,6 +28,28 @@ import java.util.List;
 public record GeneratorPreventionListener(
         GeneratorManager generatorManager
 ) implements Listener {
+
+    @EventHandler
+    private void onBucketPlace(PlayerBucketEmptyEvent event) {
+        Block clicked = event.getBlockClicked();
+        Block target = event.getBlock();
+        Block relative = clicked.getRelative(event.getBlockFace());
+
+        if (isGeneratorBlock(clicked) ||
+        isGeneratorBlock(target) ||
+        isGeneratorBlock(relative)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    private void onWaterFlow(BlockFromToEvent event) {
+        if (event.getBlock().getType() != Material.WATER && event.getBlock().getType() != Material.WATER_CAULDRON) return;
+
+        if (this.generatorManager.getActiveGenerator(event.getToBlock()) != null) {
+            event.setCancelled(true);
+        }
+    }
 
     @EventHandler
     private void onPhysicBlock(BlockPhysicsEvent event) {
@@ -204,6 +229,10 @@ public record GeneratorPreventionListener(
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean isGeneratorBlock(Block block) {
+        return block != null && this.generatorManager.getActiveGenerator(block) != null;
     }
 
 }
