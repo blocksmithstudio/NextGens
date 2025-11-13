@@ -1,10 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.runnables;
 
-import com.artillexstudios.axboosters.hooks.booster.BoosterHook;
-import com.artillexstudios.axboosters.libs.kyori.adventure.key.Key;
 import com.muhammaddaffa.mdlib.utils.Executor;
-import com.muhammaddaffa.mdlib.utils.LocationUtils;
-import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorGenerateItemEvent;
 import com.muhammaddaffa.nextgens.autosell.Autosell;
@@ -57,7 +53,7 @@ public class GeneratorTask extends BukkitRunnable {
         runnable.forceRemoveHologram(active);
     }
 
-    private final Map<String, CorruptedHologram> hologramMap = new HashMap<>();
+    private final Map<ActiveGenerator, CorruptedHologram> hologramMap = new HashMap<>();
 
     private final GeneratorManager generatorManager;
     private final EventManager eventManager;
@@ -101,21 +97,24 @@ public class GeneratorTask extends BukkitRunnable {
                     continue;
                 }
             }
-            String serialized = LocationUtils.serialize(active.getLocation());
             // check for corruption option
             if (Settings.CORRUPTION_ENABLED && active.isCorrupted()) {
                 // check if hologram is enabled
-                if (Settings.CORRUPTION_HOLOGRAM && !this.hologramMap.containsKey(serialized)) {
+                if (Settings.CORRUPTION_HOLOGRAM && !this.hologramMap.containsKey(active)) {
                     CorruptedHologram hologram = new CorruptedHologram(active);
+                    // check if hologram is already spawned
+                    if (hologramMap.containsValue(hologram)) {
+                        continue;
+                    }
                     // show the hologram
                     hologram.spawn();
                     // store it on the cache
-                    this.hologramMap.put(serialized, hologram);
+                    this.hologramMap.put(active, hologram);
                 }
                 continue;
             }
             // if the generator not corrupt but exists on the hologram map
-            CorruptedHologram hologram = this.hologramMap.remove(serialized);
+            CorruptedHologram hologram = this.hologramMap.remove(active);
             if (!active.isCorrupted() && hologram != null) {
                 hologram.destroy();
             }
@@ -123,8 +122,6 @@ public class GeneratorTask extends BukkitRunnable {
             double interval = generator.interval();
             int dropAmount;
 
-            /*float boosts = NextGens.getInstance().getBoosterHook().getSpeedBoost(player);
-            interval = interval / boosts;*/
             /**
              * World multipliers code
              */
@@ -234,7 +231,7 @@ public class GeneratorTask extends BukkitRunnable {
     }
 
     public void forceRemoveHologram(ActiveGenerator active) {
-        CorruptedHologram removed = this.hologramMap.remove(LocationUtils.serialize(active.getLocation()));
+        CorruptedHologram removed = this.hologramMap.remove(active);
         // if hologram is present, remove it
         if (removed != null) {
             removed.destroy();
