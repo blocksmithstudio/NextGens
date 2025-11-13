@@ -45,6 +45,10 @@ public class CorruptedHologram {
         }
         // Decent Holograms
         if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
+            // destroy the hologram if exists
+            if (DHAPI.getHologram(this.name) != null) {
+                return;
+            }
             DHAPI.createHologram(this.name, this.hologramLocation, lines);
         }
         // FancyHolograms
