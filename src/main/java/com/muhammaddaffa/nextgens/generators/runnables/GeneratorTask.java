@@ -4,6 +4,8 @@ import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorGenerateItemEvent;
 import com.muhammaddaffa.nextgens.autosell.Autosell;
+import com.muhammaddaffa.nextgens.cache.WorldBoostCache;
+import com.muhammaddaffa.nextgens.cache.WorldBoostSettings;
 import com.muhammaddaffa.nextgens.events.Event;
 import com.muhammaddaffa.nextgens.events.managers.EventManager;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
@@ -125,9 +127,10 @@ public class GeneratorTask extends BukkitRunnable {
             /**
              * World multipliers code
              */
-            double worldDiscount = NextGens.DEFAULT_CONFIG.getDouble("world-multipliers." + active.getLocation().getWorld().getName() + ".speed-multiplier");
-            List<String> worldEnableGenerator = NextGens.DEFAULT_CONFIG.getStringList(
-                    "world-multipliers." + active.getLocation().getWorld().getName() + ".whitelist-generator");
+            WorldBoostSettings worldBoostSettings = WorldBoostCache.getWorldBoostSettings(active.getLocation().getWorld().getName());
+            if (worldBoostSettings == null) continue;
+            double worldDiscount = worldBoostSettings.getSpeedMultiplierPercentage();
+            List<String> worldEnableGenerator = worldBoostSettings.getWhitelistGeneratorIds();
             if (worldDiscount > 0 && (worldEnableGenerator.isEmpty() || worldEnableGenerator.contains(generator.id()))) {
                 double discount = (generator.interval() * worldDiscount) / 100;
                 // deduct the interval

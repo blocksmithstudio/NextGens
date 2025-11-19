@@ -5,6 +5,7 @@ import com.muhammaddaffa.mdlib.fastinv.FastInvManager;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.nextgens.NextGens;
+import com.muhammaddaffa.nextgens.cache.WorldBoostCache;
 import com.muhammaddaffa.nextgens.events.managers.EventManager;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.generators.runnables.GeneratorTask;
@@ -33,6 +34,8 @@ public class ReloadCommand {
                     eventManager.refresh();
                     // worth reload
                     worthManager.load();
+                    // cache reload
+                    WorldBoostCache.init();
                     // send message to the sender
                     NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.reload");
                     // close all gui
