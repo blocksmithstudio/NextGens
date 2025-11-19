@@ -29,7 +29,7 @@ public class WorldBoostCache {
             int dropMultiplier = config.getInt("world-multipliers." + worldName + ".drop-multiplier", 0);
             List<String> whitelistGeneratorIds = config.getStringList("world-multipliers." + worldName + ".whitelist-generator");
             WorldBoostSettings worldBoostSettings = new WorldBoostSettings(sellMultiplier, speedMultiplierPercentage, dropMultiplier, whitelistGeneratorIds);
-            worldBoostSettingsMap.put(worldName, worldBoostSettings);
+            worldBoostSettingsMap.put(worldName.toUpperCase(), worldBoostSettings);
             Logger.info("Loaded world boost settings for world '" + worldName + "'");
         }
     }
@@ -39,7 +39,7 @@ public class WorldBoostCache {
             Logger.warning("World name is null, returning default world boost settings");
             return DEFAULT();
         }
-        return worldBoostSettingsMap.get(worldName);
+        return worldBoostSettingsMap.getOrDefault(worldName.toUpperCase(), DEFAULT());
     }
 
     private static WorldBoostSettings DEFAULT() {
