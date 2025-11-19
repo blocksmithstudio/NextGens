@@ -4,6 +4,7 @@ import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +24,9 @@ public class WorldBoostCache {
         }
 
         for (String worldName : config.getConfigurationSection("world-multipliers").getKeys(false)) {
-            double sellMultiplier = config.getDouble("world-multipliers." + worldName + ".sell-multiplier");
-            double speedMultiplierPercentage = config.getDouble("world-multipliers." + worldName + ".speed-multiplier");
-            int dropMultiplier = config.getInt("world-multipliers." + worldName + ".drop-multiplier");
+            double sellMultiplier = config.getDouble("world-multipliers." + worldName + ".sell-multiplier", 0.0);
+            double speedMultiplierPercentage = config.getDouble("world-multipliers." + worldName + ".speed-multiplier", 0.0);
+            int dropMultiplier = config.getInt("world-multipliers." + worldName + ".drop-multiplier", 0);
             List<String> whitelistGeneratorIds = config.getStringList("world-multipliers." + worldName + ".whitelist-generator");
             WorldBoostSettings worldBoostSettings = new WorldBoostSettings(sellMultiplier, speedMultiplierPercentage, dropMultiplier, whitelistGeneratorIds);
             worldBoostSettingsMap.put(worldName, worldBoostSettings);
@@ -35,9 +36,18 @@ public class WorldBoostCache {
 
     public static WorldBoostSettings getWorldBoostSettings(String worldName) {
         if (worldName == null) {
-            Logger.warning("World name is null");
-            return null;
+            Logger.warning("World name is null, returning default world boost settings");
+            return DEFAULT();
         }
         return worldBoostSettingsMap.get(worldName);
+    }
+
+    private static WorldBoostSettings DEFAULT() {
+        return new WorldBoostSettings(
+                0.0,
+                0.0,
+                0,
+                Collections.emptyList()
+        );
     }
 }

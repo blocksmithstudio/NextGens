@@ -17,8 +17,6 @@ public class GeneratorWorldDropMultiplier implements Listener {
         String worldName = active.getLocation().getWorld().getName();
         // Get the world boost settings
         WorldBoostSettings worldBoostSettings = WorldBoostCache.getWorldBoostSettings(worldName);
-        if (worldBoostSettings == null) return;
-
         int dropAmount = worldBoostSettings.getDropMultiplier();
         List<String> whitelistWorld = worldBoostSettings.getWhitelistGeneratorIds();
         // Set the drop amount if it's greater than zero

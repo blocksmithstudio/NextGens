@@ -128,7 +128,6 @@ public class GeneratorTask extends BukkitRunnable {
              * World multipliers code
              */
             WorldBoostSettings worldBoostSettings = WorldBoostCache.getWorldBoostSettings(active.getLocation().getWorld().getName());
-            if (worldBoostSettings == null) continue;
             double worldDiscount = worldBoostSettings.getSpeedMultiplierPercentage();
             List<String> worldEnableGenerator = worldBoostSettings.getWhitelistGeneratorIds();
             if (worldDiscount > 0 && (worldEnableGenerator.isEmpty() || worldEnableGenerator.contains(generator.id()))) {

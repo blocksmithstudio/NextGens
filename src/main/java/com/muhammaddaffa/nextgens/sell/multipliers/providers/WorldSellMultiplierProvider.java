@@ -12,9 +12,9 @@ public class WorldSellMultiplierProvider implements SellMultiplierProvider {
 
     @Override
     public double getMultiplier(Player player, User user, SellwandData sellwand) {
-        WorldBoostSettings worldBoostSettings = WorldBoostCache.getWorldBoostSettings(player.getWorld().getName());
-        if (worldBoostSettings == null) return 0;
-        return worldBoostSettings.getSellMultiplier();
+        return WorldBoostCache.getWorldBoostSettings(player.getWorld().getName()).getSellMultiplier() == null
+                ? 0
+                : WorldBoostCache.getWorldBoostSettings(player.getWorld().getName()).getSellMultiplier();
     }
 
 }
