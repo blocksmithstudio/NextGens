@@ -3,6 +3,7 @@ package com.muhammaddaffa.nextgens.commands.subcommands;
 import com.muhammaddaffa.mdlib.commands.args.builtin.DoubleArg;
 import com.muhammaddaffa.mdlib.commands.args.builtin.OnlinePlayerArg;
 import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
@@ -25,7 +26,7 @@ public class SetMultiplierCommand {
                     User user = manager.getUser(player);
                     user.setMultiplier(amount);
                     // save the user data afterward
-                    Executor.async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
+                    ExecutorManager.getProvider().async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
                     // send message
                     NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.set-multiplier", new Placeholder()
                             .add("{player}", player.getName())

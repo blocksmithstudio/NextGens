@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.autosell;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.sell.SellManager;
@@ -13,7 +14,7 @@ public record AutosellManager(
 ) {
 
     public void startTask() {
-        Executor.syncTimer(0L, 20L, () -> {
+        ExecutorManager.getProvider().syncTimer(1L, 20L, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 User user = this.userManager.getUser(player);
                 // check if player has autosell inventory permission

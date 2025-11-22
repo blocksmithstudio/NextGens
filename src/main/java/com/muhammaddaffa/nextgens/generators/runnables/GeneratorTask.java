@@ -1,6 +1,7 @@
 package com.muhammaddaffa.nextgens.generators.runnables;
 
-import com.muhammaddaffa.mdlib.utils.Executor;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
+import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorGenerateItemEvent;
 import com.muhammaddaffa.nextgens.autosell.Autosell;
@@ -15,17 +16,17 @@ import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
+import com.muhammaddaffa.nextgens.utils.GensRunnable;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GeneratorTask extends BukkitRunnable {
+public class GeneratorTask extends GensRunnable {
 
 
     private static GeneratorTask runnable;
@@ -38,7 +39,7 @@ public class GeneratorTask extends BukkitRunnable {
         // set back the runnable
         runnable = new GeneratorTask(generatorManager, eventManager, userManager);
         // run the task
-        runnable.runTaskTimerAsynchronously(NextGens.getInstance(), 20L, 5L);
+        runnable.runTaskTimerAsynchronously(NextGens.getInstance(), 5L, 20L);
     }
 
     public static void flush() {
@@ -185,12 +186,15 @@ public class GeneratorTask extends BukkitRunnable {
             //Logger.info("Generator " + generator.id() + " timer: " + active.getTimer() + " / " + interval);
             // check if the generator should drop
             if (active.getTimer() >= interval) {
+                Generator finalChosenGenerator = chosenGenerator;
+
+                // execute it in sync task
+                ExecutorManager.getProvider().region(active.getLocation().getWorld(),
+                        active.getLocation().getBlockX() >> 4,
+                        active.getLocation().getBlockZ() >> 4, () -> {
                 // execute drop mechanics
                 //Logger.info("Generator " + generator.id() + " is dropping item!");
                 Block block = active.getLocation().getBlock();
-                // execute it in sync task
-                Generator finalChosenGenerator = chosenGenerator;
-                Executor.sync(() -> {
                     // set the block to the desired type
                     if (Settings.FORCE_UPDATE_BLOCKS) {
                         block.setType(generator.item().getType());

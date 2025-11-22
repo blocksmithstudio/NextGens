@@ -3,6 +3,7 @@ package com.muhammaddaffa.nextgens;
 import com.bgsoftware.wildtools.api.WildToolsAPI;
 import com.muhammaddaffa.mdlib.MDLib;
 import com.muhammaddaffa.mdlib.configupdater.ConfigUpdater;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.updatechecker.UpdateCheckSource;
 import com.muhammaddaffa.mdlib.updatechecker.UpdateChecker;
 import com.muhammaddaffa.mdlib.utils.Config;
@@ -151,7 +152,7 @@ public final class NextGens extends JavaPlugin {
         // load all generators
         this.generatorManager.loadGenerators();
 
-        Executor.asyncLater(1, () -> {
+        ExecutorManager.getProvider().asyncLater(1, () -> {
             // load chunk coords for active generators
             this.generatorManager.loadChunkCoords();
             // load users
@@ -173,7 +174,7 @@ public final class NextGens extends JavaPlugin {
         });
 
         // Check all loaded chunks on all worlds
-        Executor.syncLater(20, () -> {
+        ExecutorManager.getProvider().syncLater(20, () -> {
             for (World w : Bukkit.getWorlds()) {
                 for (Chunk chunk : w.getLoadedChunks()) {
                     ChunkCoord key = new ChunkCoord(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
@@ -184,17 +185,17 @@ public final class NextGens extends JavaPlugin {
                     if (list == null || list.isEmpty()) continue;
 
                     // Proceed to load the active generators
-                    Executor.async(() -> this.generatorManager.loadActiveGenerator(key, list));
+                    ExecutorManager.getProvider().async(() -> this.generatorManager.loadActiveGenerator(key, list));
                 }
             }
         });
 
         // We should reload the generators
-        Executor.syncLater(40L, () -> {
+        ExecutorManager.getProvider().syncLater(40L, () -> {
             // load back the generators
             this.generatorManager.loadGenerators();
             // refresh the active generator
-            Executor.async(this.generatorManager::refreshActiveGenerator);
+            ExecutorManager.getProvider().async(this.generatorManager::refreshActiveGenerator);
         });
     }
 
@@ -390,7 +391,7 @@ public final class NextGens extends JavaPlugin {
     }
 
     private void updateCheck(){
-        Executor.async(() -> new UpdateChecker(this, UpdateCheckSource.SPIGOT, SPIGOT_ID + "")
+        ExecutorManager.getProvider().async(() -> new UpdateChecker(this, UpdateCheckSource.SPIGOT, SPIGOT_ID + "")
                 .setDownloadLink(SPIGOT_ID)
                 .checkEveryXHours(24)
                 .setNotifyOpsOnJoin(true)

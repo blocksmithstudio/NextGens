@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.refund;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
@@ -60,7 +61,7 @@ public class RefundManager {
         }
 
         // Remove player's data from config and save
-        Executor.async(() -> removePlayerData(playerUUID));
+        ExecutorManager.getProvider().async(() -> removePlayerData(playerUUID));
     }
 
     /**

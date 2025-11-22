@@ -2,6 +2,7 @@ package com.muhammaddaffa.nextgens.commands.subcommands;
 
 import com.muhammaddaffa.mdlib.commands.args.builtin.OnlinePlayerArg;
 import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
@@ -16,7 +17,7 @@ public class RepairCommand {
                 .exec((sender, ctx) -> {
                     Player player = ctx.get("player", Player.class);
 
-                    Executor.async(() -> {
+                    ExecutorManager.getProvider().async(() -> {
                         manager.getActiveGenerator(player).forEach(active -> active.setCorrupted(false));
                         // send message to the command sender
                         NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.player-repair", new Placeholder()

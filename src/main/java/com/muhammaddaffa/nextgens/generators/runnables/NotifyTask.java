@@ -7,6 +7,7 @@ import com.muhammaddaffa.mdlib.xseries.XSound;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
+import com.muhammaddaffa.nextgens.utils.GensRunnable;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -18,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class NotifyTask extends BukkitRunnable {
+public class NotifyTask extends GensRunnable {
 
     private static NotifyTask currentTask;
     private final GeneratorManager generatorManager;

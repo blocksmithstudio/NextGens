@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.generators;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.LocationUtils;
@@ -32,7 +33,7 @@ public class CorruptedHologram {
         // Holographic Displays
         if (Bukkit.getPluginManager().getPlugin("HolographicDisplays") != null) {
             // execute it in sync task
-            Executor.sync(() -> {
+            ExecutorManager.getProvider().sync(() -> {
                 // get the holographic api
                 HolographicDisplaysAPI api = HolographicDisplaysAPI.get(NextGens.getInstance());
                 // get the hologram position
@@ -53,7 +54,7 @@ public class CorruptedHologram {
         }
         // FancyHolograms
         if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
-            Executor.sync(() -> {
+            ExecutorManager.getProvider().sync(() -> {
                 FancyHologramsHook.spawn(this.name, this.hologramLocation, lines);
             });
         }
@@ -63,7 +64,7 @@ public class CorruptedHologram {
         // Holographic Displays
         if (Bukkit.getPluginManager().getPlugin("HolographicDisplays") != null) {
             // execute in sync task
-            Executor.sync(() -> {
+            ExecutorManager.getProvider().sync(() -> {
                 // get the holographic api
                 HolographicDisplaysAPI api = HolographicDisplaysAPI.get(NextGens.getInstance());
                 // get the position of the hologram
@@ -86,7 +87,7 @@ public class CorruptedHologram {
             }
         }
         if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
-            Executor.sync(() -> {
+            ExecutorManager.getProvider().sync(() -> {
                 FancyHologramsHook.destroy(this.name);
             });
         }

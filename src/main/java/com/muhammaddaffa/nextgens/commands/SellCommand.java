@@ -3,6 +3,7 @@ package com.muhammaddaffa.nextgens.commands;
 import com.muhammaddaffa.mdlib.MDLib;
 import com.muhammaddaffa.mdlib.commands.args.builtin.OnlinePlayerArg;
 import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.*;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.users.UserManager;
@@ -17,7 +18,7 @@ public class SellCommand extends RoutedCommand {
         if (config.getBoolean("sell-command")) {
             String command = config.getString("commands.sell.command");
             // Register command a tick later
-            Executor.sync(() -> {
+            ExecutorManager.getProvider().sync(() -> {
                 Logger.info("Sell command is enabled, overriding and registering sell command...");
                 // unregister the command
                 try {

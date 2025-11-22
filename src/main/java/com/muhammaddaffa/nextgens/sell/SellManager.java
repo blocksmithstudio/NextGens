@@ -1,6 +1,7 @@
 package com.muhammaddaffa.nextgens.sell;
 
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
@@ -109,7 +110,7 @@ public class SellManager {
         }
 
         // Save user data asynchronously
-        Executor.async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
+        ExecutorManager.getProvider().async(() -> NextGens.getInstance().getUserRepository().saveUser(user));
 
         return data;
     }

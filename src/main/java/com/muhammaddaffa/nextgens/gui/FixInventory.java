@@ -2,6 +2,7 @@ package com.muhammaddaffa.nextgens.gui;
 
 import com.muhammaddaffa.mdlib.fastinv.FastInv;
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.*;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
@@ -142,7 +143,7 @@ public class FixInventory extends FastInv {
                     .add("{gen}", this.generator.displayName())
                     .add("{cost}", Common.digits(this.generator.fixCost())));
             // play particle
-            Executor.async(() -> {
+            ExecutorManager.getProvider().async(() -> {
                 if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("corrupt-fix-options.particles")) {
                     GeneratorParticle.successParticle(block, generator);
                 }

@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.events.managers;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
@@ -132,7 +133,7 @@ public class EventManager {
             this.waitTime = this.getDefaultWaitTime();
         }
 
-        Executor.asyncTimer(20L, 2L, () -> {
+        ExecutorManager.getProvider().asyncTimer(20L, 2L, () -> {
             // if the event is not enabled, don't bother it
             if (!this.isEnabled()) {
                 return;

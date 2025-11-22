@@ -1,6 +1,7 @@
 package com.muhammaddaffa.nextgens.generators.listeners.helpers;
 
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
@@ -39,12 +40,12 @@ public class GeneratorFixHelper {
                 .add("{gen}", generator.displayName())
                 .add("{cost}", Common.digits(generator.fixCost())));
         // play particle
-        Executor.async(() -> {
+        ExecutorManager.getProvider().async(() -> {
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("corrupt-fix-options.particles")) {
                 GeneratorParticle.successParticle(block, generator);
             }
             // Save the generator
-            Executor.async(() -> NextGens.getInstance().getGeneratorManager().saveActiveGenerator(active));
+            ExecutorManager.getProvider().async(() -> NextGens.getInstance().getGeneratorManager().saveActiveGenerator(active));
         });
         // give cashback to the player
         Utils.performCashback(player, NextGens.getInstance().getUserManager(), generator.fixCost());
@@ -81,7 +82,7 @@ public class GeneratorFixHelper {
         VaultEconomy.withdraw(player, cost);
         corrupted.forEach(active -> {
             active.setCorrupted(false);
-            Executor.async(() -> generatorManager.saveActiveGenerator(active));
+            ExecutorManager.getProvider().async(() -> generatorManager.saveActiveGenerator(active));
         });
 
         // Sends message and perform cashback

@@ -7,6 +7,7 @@ description: A next generation gens tycoon plugin
 website: https://muhammaddaffa.com
 load: POSTWORLD
 depend: [Vault, PlaceholderAPI]
+folia-supported: true
 softdepend:
   - MyWorlds
   - Multiverse-Core

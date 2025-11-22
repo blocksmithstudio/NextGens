@@ -2,6 +2,7 @@ package com.muhammaddaffa.nextgens.commands.subcommands;
 
 import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
 import com.muhammaddaffa.mdlib.fastinv.FastInvManager;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.nextgens.NextGens;
@@ -28,7 +29,7 @@ public class ReloadCommand {
                     // load back the generator
                     generatorManager.loadGenerators();
                     // refresh the active generator
-                    Executor.async(generatorManager::refreshActiveGenerator);
+                    ExecutorManager.getProvider().async(generatorManager::refreshActiveGenerator);
                     // events stuff
                     eventManager.loadEvents();
                     eventManager.refresh();

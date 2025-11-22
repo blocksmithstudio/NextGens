@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.database.listeners;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.database.ChunkCoord;
@@ -37,7 +38,7 @@ public record GeneratorLoadChunkListener(
         if (list == null || list.isEmpty()) return;
 
         // Proceed to load the active generators
-        Executor.async(() -> this.generatorManager.loadActiveGenerator(key, list));
+        ExecutorManager.getProvider().async(() -> this.generatorManager.loadActiveGenerator(key, list));
     }
 
 }

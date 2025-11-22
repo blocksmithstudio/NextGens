@@ -61,10 +61,10 @@ public class GeneratorAPI {
         return this.generatorManager.getActiveGenerator();
     }
 
-    @NotNull
+    /*@NotNull
     public List<ActiveGenerator> getActiveGenerator(@NotNull Player player) {
         return this.getActiveGenerator(player.getUniqueId());
-    }
+    }*/
 
     @NotNull
     public List<ActiveGenerator> getActiveGenerator(@NotNull UUID uuid) {

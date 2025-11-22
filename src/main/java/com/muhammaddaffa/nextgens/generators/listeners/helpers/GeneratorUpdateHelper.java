@@ -1,6 +1,7 @@
 package com.muhammaddaffa.nextgens.generators.listeners.helpers;
 
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
@@ -80,7 +81,7 @@ public class GeneratorUpdateHelper {
                     .add("{cost}", Common.digits(generator.cost())));
         }
         // play particle
-        Executor.async(() -> {
+        ExecutorManager.getProvider().async(() -> {
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("generator-upgrade-options.particles")) {
                 GeneratorParticle.successParticle(block, generator);
             }

@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.runnables;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
@@ -8,6 +9,7 @@ import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorCorruptedEvent;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
+import com.muhammaddaffa.nextgens.utils.GensRunnable;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -18,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CorruptionTask extends BukkitRunnable {
+public class CorruptionTask extends GensRunnable {
 
     private static CorruptionTask runnable;
 
@@ -75,7 +77,7 @@ public class CorruptionTask extends BukkitRunnable {
             // check for chances
             if (ThreadLocalRandom.current().nextDouble(101) <= active.getGenerator().corruptChance()) {
                 // must run in a sync task
-                Executor.sync(() -> {
+                ExecutorManager.getProvider().sync(() -> {
                     // get Player
                     Player player = Bukkit.getPlayer(active.getOwner());
                     // check for online-only option
@@ -89,7 +91,7 @@ public class CorruptionTask extends BukkitRunnable {
                         // increment the counter
                         actuallyCorrupted.getAndIncrement();
                         // Save the generator
-                        Executor.async(() -> this.generatorManager.saveActiveGenerator(active));
+                        ExecutorManager.getProvider().async(() -> this.generatorManager.saveActiveGenerator(active));
                     }
                 });
             }

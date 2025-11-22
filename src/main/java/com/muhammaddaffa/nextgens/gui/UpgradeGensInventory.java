@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.listeners.helpers.GeneratorUpdateHelper;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.gui.helpers.Pagination;
+import com.muhammaddaffa.nextgens.utils.GensRunnable;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -171,7 +172,7 @@ public class UpgradeGensInventory extends FastInv {
                 .build();
     }
 
-    private static class UpgradeTask extends BukkitRunnable {
+    private static class UpgradeTask extends GensRunnable {
 
         final List<ActiveGenerator> targets;
         final int total;

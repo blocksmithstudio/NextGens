@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.managers;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.*;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorLoadEvent;
@@ -187,13 +188,13 @@ public class GeneratorManager {
             // change the generator id
             active.setGenerator(generator);
             // set the block
-            Executor.syncLater(2L, () -> block.setType(generator.item().getType()));
+            ExecutorManager.getProvider().syncLater(2L, () -> block.setType(generator.item().getType()));
         }
         ActiveGenerator finalActive = active;
         // Add generator to the chunk coord
         addChunkCoord(finalActive);
         // save the generator on the database
-        Executor.async(() -> this.dbm.saveGenerator(finalActive));
+        ExecutorManager.getProvider().async(() -> this.dbm.saveGenerator(finalActive));
         return active;
     }
 
@@ -219,7 +220,7 @@ public class GeneratorManager {
             // Remove from the chunk coord
             removeChunkCoord(removed);
             // remove the generator from the database
-            Executor.async(() -> this.dbm.deleteGenerator(removed));
+            ExecutorManager.getProvider().async(() -> this.dbm.deleteGenerator(removed));
         }
     }
 
@@ -279,7 +280,7 @@ public class GeneratorManager {
 
                 // 4) switch back to the main thread to actually register them
                 int finalCount = count;
-                Executor.sync(() -> {
+                ExecutorManager.getProvider().sync(() -> {
                     for (ActiveGenerator ag : toRegister) {
                         String key = LocationUtils.serialize(ag.getLocation());
                         activeGenerators.put(key, ag);

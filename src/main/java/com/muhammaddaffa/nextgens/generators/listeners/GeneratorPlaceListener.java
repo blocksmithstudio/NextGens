@@ -1,5 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.listeners;
 
+import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
@@ -149,7 +150,7 @@ public record GeneratorPlaceListener(
                 .add("{current}", this.generatorManager.getGeneratorCount(player))
                 .add("{max}", this.userManager.getMaxSlot(player)));
 
-        Executor.async(() -> {
+        ExecutorManager.getProvider().async(() -> {
             if (config.getBoolean("generator-place-options.particles")) {
                 GeneratorParticle.successParticle(block, generator);
             }
