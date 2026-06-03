@@ -84,7 +84,7 @@ public class SellwandListener implements Listener {
                         .map(InteractiveInventory::getBukkitInventory)
                         .toList();
 
-                sellwandManager.action(player, stack, inventories.toArray(new Inventory[0]));
+                sellwandManager.action(player, stack, block, inventories.toArray(new Inventory[0]));
                 return;
             }
         }
@@ -96,7 +96,7 @@ public class SellwandListener implements Listener {
                 Utils.bassSound(player);
                 return;
             }
-            sellwandManager.action(player, stack, container.getInventory());
+            sellwandManager.action(player, stack, block, container.getInventory());
         }
     }
 

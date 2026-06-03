@@ -11,12 +11,14 @@ import com.muhammaddaffa.nextgens.utils.SellData;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +38,10 @@ public class SellwandManager {
     }
 
     public boolean action(Player player, ItemStack stack, Inventory... inventories) {
+        return action(player, stack, null, inventories);
+    }
+
+    public boolean action(Player player, ItemStack stack, @Nullable Block block, Inventory... inventories) {
         // Extract data from the item
         ItemBuilder builder = new ItemBuilder(stack);
         ItemMeta meta = builder.getItemMeta();
@@ -52,7 +58,7 @@ public class SellwandManager {
 
         // Perform the sell
         SellwandData sellwandData = new SellwandData(stack, multiplier);
-        SellData data = NextGens.getInstance().getSellManager().performSell(player, sellwandData, inventories);
+        SellData data = NextGens.getInstance().getSellManager().performSell(player, sellwandData, block, inventories);
         if (data == null) return true;
 
         // Update uses

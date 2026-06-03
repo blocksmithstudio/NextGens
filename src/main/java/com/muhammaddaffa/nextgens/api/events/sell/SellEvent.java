@@ -2,10 +2,12 @@ package com.muhammaddaffa.nextgens.api.events.sell;
 
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.utils.SellData;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.Nullable;
 
 public class SellEvent extends Event implements Cancellable {
 
@@ -16,13 +18,20 @@ public class SellEvent extends Event implements Cancellable {
 
     private final Player player;
     private final User user;
+    private final @Nullable Block block;
     private SellData sellData;
 
     public SellEvent(Player player, User user, SellData sellData) {
+        this(player, user, sellData, null);
+    }
+
+    public SellEvent(Player player, User user, SellData sellData, @Nullable Block block) {
         this.player = player;
         this.user = user;
         this.sellData = sellData;
+        this.block = block;
     }
+
 
     public Player getPlayer() {
         return player;
@@ -34,6 +43,10 @@ public class SellEvent extends Event implements Cancellable {
 
     public SellData getSellData() {
         return sellData;
+    }
+
+    public @Nullable Block getBlock() {
+        return block;
     }
 
     public double getMultiplier() {

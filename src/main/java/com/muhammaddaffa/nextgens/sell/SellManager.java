@@ -18,10 +18,12 @@ import com.muhammaddaffa.nextgens.utils.SellData;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
 import org.bukkit.Bukkit;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 public class SellManager {
 
@@ -49,10 +51,18 @@ public class SellManager {
     }
 
     public SellData performSell(Player player, SellwandData sellwand, Inventory... inventories) {
-        return performSell(player, sellwand, false, inventories);
+        return performSell(player, sellwand, false, null, inventories);
     }
 
     public SellData performSell(Player player, SellwandData sellwand, boolean silent, Inventory... inventories) {
+        return performSell(player, sellwand, silent, null, inventories);
+    }
+
+    public SellData performSell(Player player, SellwandData sellwand, @Nullable Block block, Inventory... inventories) {
+        return performSell(player, sellwand, false, block, inventories);
+    }
+
+    public SellData performSell(Player player, SellwandData sellwand, boolean silent, @Nullable Block block, Inventory... inventories) {
         GeneratorAPI api = NextGens.getApi();
         double totalValue = 0.0;
         int totalItems = 0;
@@ -86,7 +96,7 @@ public class SellManager {
         User user = userManager.getUser(player);
         SellData sellData = SellDataCalculator.calculateSellData(player, user, sellwand, totalValue, totalItems);
 
-        SellEvent sellEvent = (sellwand != null) ? new SellwandUseEvent(player, user, sellData)
+        SellEvent sellEvent = (sellwand != null) ? new SellwandUseEvent(player, user, sellData, block)
                 : new SellCommandUseEvent(player, user, sellData);
 
         // Call the event
