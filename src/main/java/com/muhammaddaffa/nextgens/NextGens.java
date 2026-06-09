@@ -98,7 +98,7 @@ public final class NextGens extends JavaPlugin {
 
     public static Config DEFAULT_CONFIG, GENERATORS_CONFIG, SHOP_CONFIG, UPGRADE_GUI_CONFIG,
             CORRUPT_GUI_CONFIG, EVENTS_CONFIG, DATA_CONFIG, WORTH_CONFIG, SETTINGS_GUI_CONFIG,
-            VIEW_GUI_CONFIG, UPGRADE_GENS_GUI_CONFIG;
+            VIEW_GUI_CONFIG, UPGRADE_GENS_GUI_CONFIG, WEBHOOK_CONFIG;
 
     public static boolean STOPPING = false;
 
@@ -323,6 +323,7 @@ public final class NextGens extends JavaPlugin {
         SETTINGS_GUI_CONFIG     = new Config("settings_gui.yml", "gui", true);
         VIEW_GUI_CONFIG         = new Config("view_gui.yml", "gui", true);
         UPGRADE_GENS_GUI_CONFIG = new Config("upgrade_gens_gui.yml", "gui", true);
+        WEBHOOK_CONFIG          = new Config("webhook.yml", null, true);
     }
 
     private void listeners() {

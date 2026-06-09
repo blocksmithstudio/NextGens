@@ -6,14 +6,13 @@ import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
+import com.muhammaddaffa.nextgens.discord.DiscordExecute;
 import com.muhammaddaffa.nextgens.events.Event;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -170,6 +169,11 @@ public class EventManager {
                     ? this.getRandomEvent().clone()
                     : this.getNextEvent(true).clone();
 
+            this.sendDiscordEventNotification("start-message", Map.of(
+                    "{event-name}", this.activeEvent.getDisplayName(),
+                    "{duration}", String.valueOf(this.activeEvent.getDuration())
+            ));
+
             // Send start messages
             if (this.activeEvent != null) {
                 this.activeEvent.sendStartMessage();
@@ -191,6 +195,10 @@ public class EventManager {
         // Ensure duration is properly set
         if (this.activeEvent.getDuration() <= 0) {
             // End the current event
+            this.sendDiscordEventNotification("end-message", Map.of(
+                    "{event-name}", this.activeEvent.getDisplayName(),
+                    "{next-duration}", String.valueOf(this.getDefaultWaitTime())
+            ));
             this.activeEvent.sendEndMessage();
             this.activeEvent = null;
             return;
@@ -203,6 +211,10 @@ public class EventManager {
     public void forceStart(Event event) {
         // assign the active event
         this.activeEvent = event.clone();
+        this.sendDiscordEventNotification("start-message", Map.of(
+                "{event-name}", this.activeEvent.getDisplayName(),
+                "{duration}", String.valueOf(this.activeEvent.getDuration())
+        ));
         // send start messages
         this.activeEvent.sendStartMessage();
         // reset back the wait time
@@ -213,10 +225,27 @@ public class EventManager {
         if (this.activeEvent == null) {
             return false;
         }
+        this.sendDiscordEventNotification("end-message", Map.of(
+                "{event-name}", this.activeEvent.getDisplayName(),
+                "{next-duration}", String.valueOf(this.getDefaultWaitTime())
+        ));
         this.activeEvent.sendEndMessage();
         this.activeEvent = null;
         this.waitTime = this.getDefaultWaitTime();
         return true;
+    }
+
+    private void sendDiscordEventNotification(String messagePath, Map<String, String> placeholders) {
+        String path = NextGens.WEBHOOK_CONFIG.getBoolean("webhook-event.embed.enabled")
+                ? "webhook-event.embed." + messagePath
+                : "webhook-event." + messagePath;
+        String message = NextGens.WEBHOOK_CONFIG.getString(path, "");
+
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            message = message.replace(entry.getKey(), entry.getValue());
+        }
+
+        DiscordExecute.sendDiscordNotification(NextGens.getInstance(), message);
     }
 
     public void load() {

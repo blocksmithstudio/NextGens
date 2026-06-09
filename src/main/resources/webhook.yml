@@ -1,0 +1,17 @@
+settings:
+  # How often queued Discord notifications are sent. 20 ticks = 1 second.
+  send-interval-ticks: 60
+  max-message-per-batch: 8
+
+webhook-event:
+  # Leave blank while the webhook integration is not configured.
+  url: ''
+  username: 'NextGens'
+  embed:
+    enabled: true
+    title: 'NextGens Event'
+    start-message: 'Event {event-name} has started with the duration of {duration}'
+    end-message: 'Event {event-name} has ended. The next event starts in {next-duration}'
+    color: 'ORANGE'
+  start-message: 'Event {event-name} has started with the duration of {duration}'
+  end-message: 'Event {event-name} has ended. The next event starts in {next-duration}'
