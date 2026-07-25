@@ -8,9 +8,11 @@ import com.muhammaddaffa.nextgens.hologram.imp.HolographicDisplaysProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 public class HologramManager {
 
@@ -18,10 +20,20 @@ public class HologramManager {
 
     private static final Map<String, HologramProvider> HOLOGRAM_PROVIDER_LIST = new ConcurrentHashMap<>();
 
-    static {
-        register(new DecentHologramsProvider());
-        register(new FancyHologramProvider());
-        register(new HolographicDisplaysProvider());
+    /**
+     * The providers shipped with the plugin. They are only instantiated once we know their backing
+     * plugin is installed: every provider compiles against classes that only exist when that plugin
+     * is present, so touching the class without it would throw a {@link NoClassDefFoundError}.
+     * The factories are lambdas on purpose: a constructor reference would resolve the provider class
+     * right here in the static initializer, which is exactly what we are avoiding.
+     */
+    private static final List<BuiltinProvider> BUILTIN_PROVIDERS = List.of(
+            new BuiltinProvider("DecentHolograms", () -> new DecentHologramsProvider()),
+            new BuiltinProvider("FancyHolograms", () -> new FancyHologramProvider()),
+            new BuiltinProvider("HolographicDisplays", () -> new HolographicDisplaysProvider())
+    );
+
+    private record BuiltinProvider(String pluginName, Supplier<HologramProvider> factory) {
     }
 
     public static void register(HologramProvider hologramProvider) {
@@ -47,10 +59,40 @@ public class HologramManager {
     public static boolean unregister(String id) {
         if (id == null || id.isBlank()) return false;
 
-        return HOLOGRAM_PROVIDER_LIST.remove(id) != null;
+        return HOLOGRAM_PROVIDER_LIST.remove(id.toLowerCase(Locale.ROOT)) != null;
+    }
+
+    /**
+     * Registers every built-in provider whose backing plugin is actually installed and enabled.
+     * A provider that fails to load (e.g. an incompatible plugin version) is skipped instead of
+     * taking the whole plugin down with it.
+     */
+    private static void registerBuiltinProviders() {
+        for (BuiltinProvider builtin : BUILTIN_PROVIDERS) {
+            if (!Bukkit.getPluginManager().isPluginEnabled(builtin.pluginName()) || isRegistered(builtin.pluginName())) {
+                continue;
+            }
+            try {
+                register(builtin.factory().get());
+            } catch (Throwable ex) {
+                Logger.warning("Failed to hook into " + builtin.pluginName() + " (" +
+                        ex.getClass().getSimpleName() + ": " + ex.getMessage() + "), skipping it.");
+            }
+        }
+    }
+
+    private static boolean isRegistered(String pluginName) {
+        for (HologramProvider registered : HOLOGRAM_PROVIDER_LIST.values()) {
+            if (registered.pluginName().equalsIgnoreCase(pluginName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void load() {
+        registerBuiltinProviders();
+
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
         String configId = config.getString("holograms.type");
 
