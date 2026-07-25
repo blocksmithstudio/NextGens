@@ -21,6 +21,7 @@ import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.generators.runnables.CorruptionTask;
 import com.muhammaddaffa.nextgens.generators.runnables.GeneratorTask;
 import com.muhammaddaffa.nextgens.generators.runnables.NotifyTask;
+import com.muhammaddaffa.nextgens.hologram.HologramManager;
 import com.muhammaddaffa.nextgens.hooks.bento.BentoListener;
 import com.muhammaddaffa.nextgens.hooks.fabledsb.FabledSbListener;
 import com.muhammaddaffa.nextgens.hooks.papi.GensExpansion;
@@ -92,6 +93,7 @@ public final class NextGens extends JavaPlugin {
     private final SellwandManager sellwandManager = new SellwandManager();
     private final AutosellManager autosellManager = new AutosellManager(userManager);
     private final SellMultiplierRegistry sellMultiplierRegistry = new SellMultiplierRegistry();
+    private final HologramManager hologramManager = new HologramManager();
 
     // API
     private BoltAPI boltAPI;
@@ -134,6 +136,7 @@ public final class NextGens extends JavaPlugin {
 
         // initialize settings
         Settings.init();
+        this.hologramManager.load();
 
         // connect to database and create the table
         this.dbm.connect();
@@ -460,6 +463,10 @@ public final class NextGens extends JavaPlugin {
 
     public BoltAPI getBoltAPI() {
         return boltAPI;
+    }
+
+    public HologramManager getHologramManager() {
+        return hologramManager;
     }
 
     public static NextGens getInstance() {

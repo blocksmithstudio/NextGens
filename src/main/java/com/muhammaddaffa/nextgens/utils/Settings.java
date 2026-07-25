@@ -13,10 +13,12 @@ public class Settings {
             CORRUPTION_HOLOGRAM, DEFAULT_MAX_GENERATOR_ENABLED, SELL_COMMAND, PLACE_PERMISSION, ONLINE_ONLY,
             ANTI_EXPLOSION, DISABLE_DROP_PLACE, ISLAND_PICKUP,
             UPGRADE_GUI, CLOSE_ON_PURCHASE, CLOSE_ON_NO_MONEY, DROP_ON_BREAK, BROKEN_PICKUP, REPAIR_OWNER_ONLY,
-            DISABLE_CRAFTING, GENERATOR_PLACE_DISTANCE, CORRUPTION_ONLINE_ONLY;
+            DISABLE_CRAFTING, GENERATOR_PLACE_DISTANCE, CORRUPTION_ONLINE_ONLY,
+            FANCY_HOLOGRAM_TEXT_SHADOW, FANCY_HOLOGRAM_SEE_THROUGH;
 
     // String
-    public static String GENS_PICKUP_ACTION, GENS_UPGRADE_ACTION, GENS_FIX_ACTION, CORRUPT_GUI_TITLE;
+    public static String GENS_PICKUP_ACTION, GENS_UPGRADE_ACTION, GENS_FIX_ACTION, CORRUPT_GUI_TITLE,
+            FANCY_HOLOGRAM_BILLBOARD, FANCY_HOLOGRAM_TEXT_ALIGNMENT, FANCY_HOLOGRAM_BACKGROUND;
 
     // String List
     public static List<String> BLACKLISTED_WORLDS, CORRUPTION_BLACKLISTED_GENERATORS, CORRUPTION_HOLOGRAM_LINES;
@@ -28,7 +30,7 @@ public class Settings {
     public static List<Integer> CORRUPT_GUI_DISPLAY_SLOTS;
 
     // Double
-    public static double CORRUPTION_HOLOGRAM_HEIGHT;
+    public static double CORRUPTION_HOLOGRAM_HEIGHT, FANCY_HOLOGRAM_SCALE;
 
     // Config Message
     public static ConfigMessage CORRUPTION_BROADCAST, CORRUPTION_NOTIFY_MESSAGE;
@@ -62,11 +64,16 @@ public class Settings {
         DISABLE_CRAFTING = config.getBoolean("disable-crafting.enabled");
         GENERATOR_PLACE_DISTANCE = config.getBoolean("generator-place-distance.enabled");
         CORRUPTION_ONLINE_ONLY = config.getBoolean("corruption.online-only");
+        FANCY_HOLOGRAM_TEXT_SHADOW = config.getBoolean("holograms.fancyholograms.text-shadow");
+        FANCY_HOLOGRAM_SEE_THROUGH = config.getBoolean("holograms.fancyholograms.see-through");
 
         // String
         GENS_PICKUP_ACTION = config.getString("interaction.gens-pickup");
         GENS_UPGRADE_ACTION = config.getString("interaction.gens-upgrade");
         GENS_FIX_ACTION = config.getString("interaction.gens-fix");
+        FANCY_HOLOGRAM_BILLBOARD = config.getString("holograms.fancyholograms.billboard");
+        FANCY_HOLOGRAM_TEXT_ALIGNMENT = config.getString("holograms.fancyholograms.text-alignment");
+        FANCY_HOLOGRAM_BACKGROUND = config.getString("holograms.fancyholograms.background");
 
         // String List
         BLACKLISTED_WORLDS = config.getStringList("blacklisted-worlds");
@@ -80,6 +87,7 @@ public class Settings {
 
         // Double
         CORRUPTION_HOLOGRAM_HEIGHT = config.getDouble("corruption.hologram.height");
+        FANCY_HOLOGRAM_SCALE = config.getDouble("holograms.fancyholograms.scale");
 
         // Config Message
         CORRUPTION_BROADCAST = new ConfigMessage(config, "corruption.broadcast");

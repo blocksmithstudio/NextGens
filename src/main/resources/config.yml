@@ -67,7 +67,7 @@ corruption:
       - '  &ffind them and fix them by shift + right-clicking it.'
       - '&7'
   # Should we spawn hologram to indicate the generator is broken?
-  # Require: HolographicDisplays or DecentHolograms
+  # Which hologram plugin is used is controlled by the 'holograms' section below.
   hologram:
     enabled: true
     height: 1.85
@@ -78,6 +78,34 @@ corruption:
   blacklisted-generators:
     - disabled_generator
     - unbreakable_generator
+
+# Hologram System
+# Controls which hologram plugin NextGens hooks into for generator holograms.
+holograms:
+  # The hologram plugin to use. Supported values:
+  #   - DecentHolograms
+  #   - FancyHologram
+  #   - HolographicDisplays
+  # If the chosen plugin isn't installed (or this is left blank), NextGens will
+  # automatically fall back to any supported hologram plugin it can find.
+  type: DecentHolograms
+  # The options below ONLY apply when FancyHolograms is the active provider.
+  fancyholograms:
+    # How the hologram rotates to face players.
+    # Options: CENTER, VERTICAL, HORIZONTAL, FIXED
+    billboard: CENTER
+    # Size multiplier of the hologram (1.0 = normal size).
+    scale: 1.0
+    # Text alignment. Options: LEFT, CENTER, RIGHT
+    text-alignment: CENTER
+    # Should the text cast a shadow?
+    text-shadow: false
+    # Should the hologram be visible through solid blocks?
+    see-through: false
+    # Background color behind the text.
+    # Use 'transparent' for no background, 'default' to keep FancyHolograms'
+    # own default, or a hex color like '#FF5555'.
+    background: transparent
 
 # Configuration for commands name and aliases (required restart to take effect)
 commands:
