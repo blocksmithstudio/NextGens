@@ -13,7 +13,7 @@
 
     <description>A next generation gens tycoon plugin</description>
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>https://muhammaddaffa.com</url>
@@ -25,8 +25,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${java.version}</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -74,10 +73,6 @@
     <repositories>
         <repository>
             <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-        <repository>
-            <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
@@ -129,9 +124,9 @@
             <url>https://repo.artillex-studios.com/releases/</url>
         </repository>
         <repository>
-            <id>fancyplugins-releases</id>
-            <name>FancyPlugins Repository</name>
-            <url>https://repo.fancyplugins.de/releases</url>
+            <id>fancyinnovations-releases</id>
+            <name>FancyInnovations Repository</name>
+            <url>https://repo.fancyinnovations.com/releases</url>
         </repository>
     </repositories>
 
@@ -152,7 +147,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.10-R0.1-SNAPSHOT</version>
+            <version>1.20.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- Vault -->
@@ -232,13 +227,6 @@
             <version>LATEST</version>
             <scope>provided</scope>
         </dependency>
-        <!-- FabledSkyblock -->
-        <dependency>
-            <groupId>com.craftaro</groupId>
-            <artifactId>FabledSkyBlock</artifactId>
-            <version>3.0.4-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
         <!-- PlotSquared -->
         <dependency>
             <groupId>com.intellectualsites.plotsquared</groupId>
@@ -300,7 +288,7 @@
         <dependency>
             <groupId>de.oliver</groupId>
             <artifactId>FancyHolograms</artifactId>
-            <version>2.8.0</version>
+            <version>2.11.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
