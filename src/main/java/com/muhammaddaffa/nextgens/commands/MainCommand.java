@@ -60,6 +60,7 @@ public class MainCommand extends RoutedCommand {
         RemoveMaxCommand.handle(sub("removemax"), userManager, generatorManager);
         ResetMaxCommand.handle(sub("resetmax"), userManager, generatorManager);
 
+        GiveAllCommand.handle(sub("giveall"), generatorManager);
         GiveCommand.handle(sub("give"), generatorManager);
         RepairCommand.handle(sub("repair"), generatorManager);
         ReloadCommand.handle(sub("reload"), generatorManager, eventManager, worthManager);
