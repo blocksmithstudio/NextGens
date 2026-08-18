@@ -2029,7 +2029,7 @@ honey_generator:
   upgrade:
     # The generator that will be used upon upgrading
     # If you don't want the generator to be upgradeable, simply put "null"
-    next-generator: nethrite_generator
+    next-generator: netherite_generator
     upgrade-cost: 50000000
   # The generator item
   item:
