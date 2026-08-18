@@ -46,7 +46,7 @@ public class FixInventory extends FastInv {
         // get the slots
         List<Integer> slots = Settings.CORRUPT_GUI_DISPLAY_SLOTS;
         // if player has enough money
-        if (VaultEconomy.getBalance(this.player) >= this.generator.fixCost()) {
+        if (EconomySelector.getBalance(this.player) >= this.generator.fixCost()) {
             this.setFixButton(slots);
         } else {
             this.setNoMoneyButton(slots);
@@ -65,7 +65,7 @@ public class FixInventory extends FastInv {
                         .add("{current}", this.generator.displayName())
                         .add("{speed}", this.generator.interval())
                         .add("{cost}", Common.digits(this.generator.fixCost()))
-                        .add("{balance}", Common.digits(VaultEconomy.getBalance(this.player))));
+                        .add("{balance}", Common.digits(EconomySelector.getBalance(this.player))));
 
         if (config.getBoolean("display-enough-money.glowing")) {
             builder.enchant(Enchantment.INFINITY);
@@ -91,7 +91,7 @@ public class FixInventory extends FastInv {
                         .add("{current}", this.generator.displayName())
                         .add("{speed}", this.generator.interval())
                         .add("{cost}", Common.digits(this.generator.fixCost()))
-                        .add("{balance}", Common.digits(VaultEconomy.getBalance(this.player))));
+                        .add("{balance}", Common.digits(EconomySelector.getBalance(this.player))));
 
         if (config.getBoolean("display-no-money.glowing")) {
             builder.enchant(Enchantment.INFINITY);
@@ -100,9 +100,9 @@ public class FixInventory extends FastInv {
         // set the item
         this.setItems(Utils.convertListToIntArray(slots), builder.build(), event -> {
             NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
-                    .add("{money}", Common.digits(VaultEconomy.getBalance(this.player)))
+                    .add("{money}", Common.digits(EconomySelector.getBalance(this.player)))
                     .add("{upgradecost}", Common.digits(this.generator.fixCost()))
-                    .add("{remaining}", Common.digits(VaultEconomy.getBalance(this.player) - this.generator.fixCost())));
+                    .add("{remaining}", Common.digits(EconomySelector.getBalance(this.player) - this.generator.fixCost())));
             // play bass sound
             Utils.bassSound(player);
             // close the gui
@@ -123,11 +123,11 @@ public class FixInventory extends FastInv {
         this.setItems(Utils.convertListToIntArray(slots), builder.build(), event -> {
             Block block = this.active.getLocation().getBlock();
             // money check
-            if (VaultEconomy.getBalance(this.player) < this.generator.fixCost()) {
+            if (EconomySelector.getBalance(this.player) < this.generator.fixCost()) {
                 NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
-                        .add("{money}", Common.digits(VaultEconomy.getBalance(this.player)))
+                        .add("{money}", Common.digits(EconomySelector.getBalance(this.player)))
                         .add("{upgradecost}", Common.digits(this.generator.fixCost()))
-                        .add("{remaining}", Common.digits(VaultEconomy.getBalance(this.player) - this.generator.fixCost())));
+                        .add("{remaining}", Common.digits(EconomySelector.getBalance(this.player) - this.generator.fixCost())));
                 // play bass sound
                 Utils.bassSound(this.player);
                 // close the gui
@@ -135,7 +135,7 @@ public class FixInventory extends FastInv {
                 return;
             }
             // take the money from player
-            VaultEconomy.withdraw(this.player, this.generator.fixCost());
+            EconomySelector.withdraw(this.player, this.generator.fixCost());
             // fix the generator
             this.active.setCorrupted(false);
             // visual actions

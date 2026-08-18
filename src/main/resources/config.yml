@@ -19,6 +19,8 @@
 # Should we auto update your config?
 # Only turn this off if you know what you are doing.
 auto-config-update: true
+# What currency should we use, leave blank to disable
+currency: coins
 
 # MySQL feature to save/load generators
 # If disabled, we will use SQLite

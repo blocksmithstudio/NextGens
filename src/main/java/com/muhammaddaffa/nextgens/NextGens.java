@@ -33,6 +33,7 @@ import com.muhammaddaffa.nextgens.sellwand.listeners.SellwandListener;
 import com.muhammaddaffa.nextgens.sellwand.managers.SellwandManager;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.users.UserRepository;
+import com.muhammaddaffa.nextgens.utils.EconomySelector;
 import com.muhammaddaffa.nextgens.utils.Settings;
 import com.muhammaddaffa.nextgens.worth.WorthManager;
 import dev.norska.dsw.DeluxeSellwands;
@@ -131,6 +132,9 @@ public final class NextGens extends JavaPlugin {
         // initialize configs and update
         configs();
         update();
+
+        // Initialize the custom currency
+        EconomySelector.init();
 
         // initialize settings
         Settings.init();

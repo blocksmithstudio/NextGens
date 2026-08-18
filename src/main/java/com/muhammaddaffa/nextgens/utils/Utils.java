@@ -96,7 +96,7 @@ public class Utils {
         // get the cashback amount
         double refund = ((amount * cashbackEvent.getPercentage()) / 100);
         // give back the money to the player
-        VaultEconomy.deposit(player, refund);
+        EconomySelector.deposit(player, refund);
         // send the message only if player has notify on
         if (userManager.getUser(player).isToggleCashback()) {
             NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.cashback", new Placeholder()

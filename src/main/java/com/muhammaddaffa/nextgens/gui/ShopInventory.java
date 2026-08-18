@@ -8,6 +8,7 @@ import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
+import com.muhammaddaffa.nextgens.utils.EconomySelector;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -92,11 +93,11 @@ public class ShopInventory extends FastInv {
 
                 this.setItems(Utils.convertListToIntArray(slots), stack, event -> {
                     // money check
-                    if (VaultEconomy.getBalance(this.player) < cost) {
+                    if (EconomySelector.getBalance(this.player) < cost) {
                         NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
-                                .add("{money}", Common.digits(VaultEconomy.getBalance(this.player)))
+                                .add("{money}", Common.digits(EconomySelector.getBalance(this.player)))
                                 .add("{upgradecost}", Common.digits(cost))
-                                .add("{remaining}", Common.digits(VaultEconomy.getBalance(this.player) - cost)));
+                                .add("{remaining}", Common.digits(EconomySelector.getBalance(this.player) - cost)));
                         // play bass sound
                         Utils.bassSound(this.player);
                         // close on no money
@@ -106,7 +107,7 @@ public class ShopInventory extends FastInv {
                         return;
                     }
                     // reduce the amount
-                    VaultEconomy.withdraw(this.player, cost);
+                    EconomySelector.withdraw(this.player, cost);
                     // give the generator
                     Common.addInventoryItem(this.player, generator.createItem(1));
                     // send message

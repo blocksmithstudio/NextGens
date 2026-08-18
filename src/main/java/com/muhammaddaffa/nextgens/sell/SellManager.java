@@ -14,6 +14,7 @@ import com.muhammaddaffa.nextgens.events.managers.EventManager;
 import com.muhammaddaffa.nextgens.sellwand.models.SellwandData;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
+import com.muhammaddaffa.nextgens.utils.EconomySelector;
 import com.muhammaddaffa.nextgens.utils.SellData;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
@@ -41,7 +42,7 @@ public class SellManager {
         Double value = api.getWorth(stack);
         if (value == null) return false;
         // Sell the item
-        VaultEconomy.deposit(player, value);
+        EconomySelector.deposit(player, value);
         // Update statistics
         user.addEarnings(value);
         user.addItemsSold(stack.getAmount());
@@ -104,7 +105,7 @@ public class SellManager {
         if (sellEvent.isCancelled()) return null;
 
         SellData data = sellEvent.getSellData();
-        VaultEconomy.deposit(player, data.getTotalValue());
+        EconomySelector.deposit(player, data.getTotalValue());
 
         if (!silent) {
             sendSellVisual(player, data);

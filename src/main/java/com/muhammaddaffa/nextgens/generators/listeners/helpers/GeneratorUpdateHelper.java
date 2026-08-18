@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.events.generators.GeneratorUpgradeEvent;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.Generator;
+import com.muhammaddaffa.nextgens.utils.EconomySelector;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
 import org.bukkit.Bukkit;
@@ -46,11 +47,11 @@ public class GeneratorUpdateHelper {
             return false;
         }
         // money check
-        if (VaultEconomy.getBalance(player) < generator.cost()) {
+        if (EconomySelector.getBalance(player) < generator.cost()) {
             NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-enough-money", new Placeholder()
-                    .add("{money}", Common.digits(VaultEconomy.getBalance(player)))
+                    .add("{money}", Common.digits(EconomySelector.getBalance(player)))
                     .add("{upgradecost}", Common.digits(generator.cost()))
-                    .add("{remaining}", Common.digits(VaultEconomy.getBalance(player) - generator.cost())));
+                    .add("{remaining}", Common.digits(EconomySelector.getBalance(player) - generator.cost())));
             // play bass sound
             Utils.bassSound(player);
             return false;
@@ -69,7 +70,7 @@ public class GeneratorUpdateHelper {
             return false;
         }
         // take the money from player
-        VaultEconomy.withdraw(player, generator.cost());
+        EconomySelector.withdraw(player, generator.cost());
         // register the generator again
         NextGens.getInstance().getGeneratorManager().registerGenerator(player, nextGenerator, block);
         // visual actions

@@ -55,7 +55,7 @@ public class UpgradeInventory extends FastInv {
             return;
         }
         // if player has enough money
-        if (VaultEconomy.getBalance(this.player) >= this.generator.cost()) {
+        if (EconomySelector.getBalance(this.player) >= this.generator.cost()) {
             this.setUpgradeButton(slots);
         } else {
             this.setNoMoneyButton(slots);
@@ -88,7 +88,7 @@ public class UpgradeInventory extends FastInv {
                         .add("{next_corruption}", Common.digits(this.nextGenerator.corruptChance()))
                         .add("{next_repair}", Common.digits(this.nextGenerator.fixCost()))
                         .add("{cost}", Common.digits(this.generator.cost()))
-                        .add("{balance}", Common.digits(VaultEconomy.getBalance(this.player))));
+                        .add("{balance}", Common.digits(EconomySelector.getBalance(this.player))));
 
         // set the item
         this.setItems(slots, builder.build(), event -> {
@@ -130,14 +130,14 @@ public class UpgradeInventory extends FastInv {
                         .add("{next_corruption}", Common.digits(this.nextGenerator.corruptChance()))
                         .add("{next_repair}", Common.digits(this.nextGenerator.fixCost()))
                         .add("{cost}", Common.digits(this.generator.cost()))
-                        .add("{balance}", Common.digits(VaultEconomy.getBalance(this.player))));
+                        .add("{balance}", Common.digits(EconomySelector.getBalance(this.player))));
 
         // set the item
         this.setItems(Utils.convertListToIntArray(slots), builder.build(), event -> {
             NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
-                    .add("{money}", Common.digits(VaultEconomy.getBalance(this.player)))
+                    .add("{money}", Common.digits(EconomySelector.getBalance(this.player)))
                     .add("{upgradecost}", Common.digits(this.generator.cost()))
-                    .add("{remaining}", Common.digits(VaultEconomy.getBalance(this.player) - this.generator.cost())));
+                    .add("{remaining}", Common.digits(EconomySelector.getBalance(this.player) - this.generator.cost())));
             // play bass sound
             Utils.bassSound(this.player);
             // close the gui
