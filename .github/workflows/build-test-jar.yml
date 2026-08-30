@@ -1,0 +1,66 @@
+name: Build test JAR
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nextgens-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build and verify
+        run: bash ./mvnw -B -ntp verify
+
+      - name: Select distributable JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          mapfile -t artifacts < <(
+            find target -maxdepth 1 -type f -name 'NextGens-*.jar' \
+              ! -name 'original-*' \
+              ! -name '*-shaded.jar' \
+              -print
+          )
+
+          if [[ ${#artifacts[@]} -ne 1 ]]; then
+            echo "Expected exactly one distributable NextGens JAR, found ${#artifacts[@]}."
+            printf '%s\n' "${artifacts[@]:-}"
+            exit 1
+          fi
+
+          cp "${artifacts[0]}" dist/NextGens.jar
+          jar tf dist/NextGens.jar > dist/NextGens.jar.contents
+          grep -Fxq plugin.yml dist/NextGens.jar.contents
+          rm dist/NextGens.jar.contents
+          sha256sum dist/NextGens.jar | tee dist/NextGens.jar.sha256
+
+      - name: Upload test JAR
+        uses: actions/upload-artifact@v7
+        with:
+          name: NextGens-test-${{ github.run_number }}-${{ github.sha }}
+          path: dist/NextGens.jar
+          if-no-files-found: error
+          retention-days: 14
+          archive: false
