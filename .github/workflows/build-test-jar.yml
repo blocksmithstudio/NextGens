@@ -34,6 +34,9 @@ jobs:
       - name: Check optional hologram provider selection
         run: java scripts/HologramProviderCheck.java
 
+      - name: Check pending generator refunds
+        run: java scripts/RefundCheck.java
+
       - name: Select distributable JAR
         shell: bash
         run: |

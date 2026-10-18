@@ -1,6 +1,5 @@
 package com.muhammaddaffa.nextgens.generators.listeners;
 
-import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
@@ -11,7 +10,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.ItemStack;
 
 public record PlayerJoinListener(
         GeneratorManager generatorManager
@@ -27,8 +25,8 @@ public record PlayerJoinListener(
             Generator generator = this.generatorManager.getGenerator(config.getString("first-join-generator.generator"));
             // give the generator to the player
             if (generator != null) {
-                ItemStack stack = generator.createItem(config.getInt("first-join-generator.amount", 1));
-                Common.addInventoryItem(player, stack);
+                NextGens.getInstance().getRefundManager().giveGeneratorItems(player, generator,
+                        config.getInt("first-join-generator.amount", 1));
             }
             // execute the commands
             for (String command : config.getStringList("first-join-generator.commands")) {

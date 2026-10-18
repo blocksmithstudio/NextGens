@@ -171,6 +171,8 @@ interaction:
 # disbanded, kicked, leave their island?
 # If this option is disabled, the generator will disappear instead.
 # Supported Plugins: SuperiorSkyblock2, BentoBox (see resource description for full info)
+# Refunds that do not fit stay in data.yml and are retried automatically.
+# Online players receive a pending-refund reminder once per minute.
 island-pickup: true
 # Should we open up the upgrade gui if player tries to upgrade their gen?
 # Take a look at "gui/upgrade_gui.yml" to configure the upgrade gui
@@ -180,6 +182,7 @@ close-on-purchase: false
 # Should we close shop gui if player doesn't have money to buy the gen?
 close-on-no-money: false
 # Should we drop the generator item on the ground upon breaking?
+# If false, deliver what fits and keep overflow pending with reminders.
 drop-on-break: false
 # Should /pickupgens pickup broken generator?
 broken-pickup: true
@@ -383,6 +386,9 @@ messages:
   invalid-gen: '&6[NextGens] &cThere is no generator with that id!'
   give-gen: '&6[NextGens] &aYou give &e{amount}x {gen} &ato &e{player}'
   receive-gen: '&6[NextGens] &aYou receive &e{amount}x {gen}&a!'
+  # {generators}: remaining counts with each generator's colored display name.
+  # {slots}: extra storage slots needed, accounting for item stack limits.
+  pending-refund: '&6[NextGens] &aYou have pending generators to be given to you: &f{generators}&r&a, free up at least &f{slots} &aslots in your inventory to receive the generators.'
   add-max: '&6[NextGens] &aYou have add &e{amount} &atotal gens place to &e{player}'
   max-added: '&6[NextGens] &aYou can now place &e{amount} &amore generators &7({current}/{max})'
   remove-max: '&6[NextGens] &aYou have removed &e{amount} &atotal gens from &e{player}'
