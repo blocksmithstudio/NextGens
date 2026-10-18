@@ -81,7 +81,7 @@ public class PickupCommand extends RoutedCommand {
             // set the block to air
             active.getLocation().getBlock().setType(Material.AIR);
             // give the item to the player
-            Common.addInventoryItem(player, active.getGenerator().createItem(1));
+            NextGens.getInstance().getRefundManager().giveGeneratorItems(player, active.getGenerator(), 1);
         }
         // send message
         NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.force-pickup", new Placeholder()

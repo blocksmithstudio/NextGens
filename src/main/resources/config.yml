@@ -182,6 +182,7 @@ close-on-purchase: false
 # Should we close shop gui if player doesn't have money to buy the gen?
 close-on-no-money: false
 # Should we drop the generator item on the ground upon breaking?
+# If false, deliver what fits and keep overflow pending with reminders.
 drop-on-break: false
 # Should /pickupgens pickup broken generator?
 broken-pickup: true

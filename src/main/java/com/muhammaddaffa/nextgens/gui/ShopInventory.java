@@ -108,7 +108,7 @@ public class ShopInventory extends FastInv {
                     // reduce the amount
                     VaultEconomy.withdraw(this.player, cost);
                     // give the generator
-                    Common.addInventoryItem(this.player, generator.createItem(1));
+                    NextGens.getInstance().getRefundManager().giveGeneratorItems(this.player, generator, 1);
                     // send message
                     NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.gen-purchase", new Placeholder()
                             .add("{gen}", generator.displayName())

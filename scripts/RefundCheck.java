@@ -13,11 +13,14 @@ public class RefundCheck {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("org.bukkit.plugin.Plugin", "package org.bukkit.plugin; public interface Plugin {}");
         sources.put("org.bukkit.Material", "package org.bukkit; public enum Material { AIR, STONE }");
+        sources.put("org.bukkit.entity.Entity", "package org.bukkit.entity; public interface Entity {}");
         sources.put("org.bukkit.block.Block", """
                 package org.bukkit.block;
                 public class Block {
                     public org.bukkit.Material type = org.bukkit.Material.STONE;
                     public void setType(org.bukkit.Material value) { type = value; }
+                    public org.bukkit.Location getLocation() { return new org.bukkit.Location(); }
+                    public org.bukkit.World getWorld() { return org.bukkit.Bukkit.world; }
                 }
                 """);
         sources.put("org.bukkit.Location", """
@@ -25,11 +28,25 @@ public class RefundCheck {
                 public class Location {
                     private final org.bukkit.block.Block block = new org.bukkit.block.Block();
                     public org.bukkit.block.Block getBlock() { return block; }
+                    public org.bukkit.World getWorld() { return org.bukkit.Bukkit.world; }
+                    public int getBlockX() { return 0; }
+                    public int getBlockY() { return 0; }
+                    public int getBlockZ() { return 0; }
+                    public Location add(double x, double y, double z) { return this; }
                 }
                 """);
         sources.put("org.bukkit.Bukkit", """
                 package org.bukkit;
                 public class Bukkit {
+                    public static boolean primary = true;
+                    public static boolean isPrimaryThread() { return primary; }
+                    public static boolean isOwnedByCurrentRegion(org.bukkit.entity.Entity entity) {
+                        return io.papermc.paper.threadedregions.scheduler.EntityScheduler.onOwner;
+                    }
+                    public static final World world = new World();
+                    public static org.bukkit.command.CommandSender getConsoleSender() { return new org.bukkit.command.CommandSender() {}; }
+                    public static boolean dispatchCommand(org.bukkit.command.CommandSender sender, String command) { return true; }
+                    public static org.bukkit.plugin.PluginManager getPluginManager() { return new org.bukkit.plugin.PluginManager(); }
                     public static final java.util.Map<java.util.UUID, org.bukkit.entity.Player> players = new java.util.HashMap<>();
                     public static org.bukkit.entity.Player getPlayer(java.util.UUID id) {
                         var player = players.get(id);
@@ -44,6 +61,7 @@ public class RefundCheck {
                     public final int limit;
                     private int amount;
                     public ItemStack(String id, int amount, int limit) { this.id = id; this.amount = amount; this.limit = limit; }
+                    public ItemStack(org.bukkit.Material material) { this(material.name(), 1, 64); }
                     public int getAmount() { return amount; }
                     public void setAmount(int value) { amount = value; }
                     public int getMaxStackSize() { return limit; }
@@ -96,12 +114,17 @@ public class RefundCheck {
                 """);
         sources.put("org.bukkit.entity.Player", """
                 package org.bukkit.entity;
-                public class Player {
+                public class Player implements Entity, org.bukkit.command.CommandSender {
                     public final java.util.UUID uuid = java.util.UUID.randomUUID();
                     public final org.bukkit.inventory.PlayerInventory inventory = new org.bukkit.inventory.PlayerInventory();
                     public final java.util.List<String> messages = new java.util.ArrayList<>();
                     public final io.papermc.paper.threadedregions.scheduler.EntityScheduler scheduler = new io.papermc.paper.threadedregions.scheduler.EntityScheduler();
                     public boolean online = true;
+                    public boolean playedBefore;
+                    public boolean hasPlayedBefore() { return playedBefore; }
+                    public org.bukkit.Location getLocation() { return new org.bukkit.Location(); }
+                    public void playSound(org.bukkit.Location location, Object sound, float volume, float pitch) {}
+                    public void closeInventory() {}
                     public java.util.UUID getUniqueId() { return uuid; }
                     public boolean isOnline() { return online; }
                     public String getName() { return "RefundPlayer"; }
@@ -146,6 +169,7 @@ public class RefundCheck {
                         public long period;
                         public com.muhammaddaffa.mdlib.task.handleTask.HandleTask handle;
                         public void sync(Runnable run) { queue.add(run); }
+                        public void async(Runnable run) { queue.add(run); }
                         public com.muhammaddaffa.mdlib.task.handleTask.HandleTask syncTimer(long delay, long period, Runnable run) {
                             this.timer = run; this.period = period;
                             return handle = new com.muhammaddaffa.mdlib.task.handleTask.HandleTask();
@@ -163,10 +187,14 @@ public class RefundCheck {
                         else { values.put(path, value); }
                     }
                     public boolean isConfigurationSection(String path) { return values.keySet().stream().anyMatch(key -> key.startsWith(path + ".")); }
-                    public FileConfiguration getConfigurationSection(String path) { return this; }
+                    public FileConfiguration getConfigurationSection(String path) {
+                        var section = new FileConfiguration();
+                        values.forEach((key, value) -> { if (key.startsWith(path + ".")) { section.values.put(key.substring(path.length() + 1), value); } });
+                        return section;
+                    }
                     public java.util.Set<String> getKeys(boolean deep) {
                         var keys = new java.util.LinkedHashSet<String>();
-                        values.keySet().stream().filter(key -> key.startsWith("items.")).forEach(key -> keys.add(key.substring(6)));
+                        values.keySet().forEach(key -> keys.add(deep || !key.contains(".") ? key : key.substring(0, key.indexOf('.'))));
                         return keys;
                     }
                     public java.util.List<String> getStringList(String path) {
@@ -174,6 +202,12 @@ public class RefundCheck {
                         return value instanceof java.util.List<?> list ? new java.util.ArrayList<>((java.util.List<String>) list) : new java.util.ArrayList<>();
                     }
                     public boolean getBoolean(String path) { return !Boolean.FALSE.equals(values.get(path)); }
+                    public String getString(String path) { return getString(path, ""); }
+                    public String getString(String path, String fallback) { return (String) values.getOrDefault(path, fallback); }
+                    public int getInt(String path, int fallback) { return ((Number) values.getOrDefault(path, fallback)).intValue(); }
+                    public int getInt(String path) { return getInt(path, 0); }
+                    public double getDouble(String path) { return ((Number) values.getOrDefault(path, 0)).doubleValue(); }
+                    public java.util.List<Integer> getIntegerList(String path) { return (java.util.List<Integer>) values.getOrDefault(path, java.util.List.of()); }
                     public boolean contains(String path) { return values.containsKey(path); }
                 }
                 """);
@@ -193,9 +227,13 @@ public class RefundCheck {
                     public int saves;
                     public Config() { config.set("messages.pending-refund", message); }
                     public org.bukkit.configuration.file.FileConfiguration getConfig() { return config; }
+                    public int getInt(String path) { return config.getInt(path); }
+                    public String getString(String path) { return config.getString(path); }
                     public void saveConfig() { saved = new java.util.HashMap<>(config.values); saves++; }
-                    public void sendMessage(org.bukkit.entity.Player player, String path, Placeholder placeholders) {
-                        if (!path.equals("messages.pending-refund")) { throw new AssertionError("Wrong message key"); }
+                    public void sendMessage(org.bukkit.command.CommandSender sender, String path) {}
+                    public void sendMessage(org.bukkit.command.CommandSender sender, String path, Placeholder placeholders) {
+                        if (!path.equals("messages.pending-refund")) { return; }
+                        var player = (org.bukkit.entity.Player) sender;
                         String text = message;
                         for (var entry : placeholders.values.entrySet()) { text = text.replace(entry.getKey(), entry.getValue()); }
                         player.messages.add(text);
@@ -205,6 +243,12 @@ public class RefundCheck {
         sources.put("com.muhammaddaffa.mdlib.utils.Common", """
                 package com.muhammaddaffa.mdlib.utils;
                 public class Common {
+                    public static String color(String text) { return text; }
+                    public static String digits(Number number) { return number.toString(); }
+                    public static void sendMessage(org.bukkit.command.CommandSender sender, String text, Placeholder placeholders) {}
+                    public static void addInventoryItem(org.bukkit.entity.Player player, org.bukkit.inventory.ItemStack item) {
+                        throw new AssertionError("Generator delivery must not use the ground-drop helper");
+                    }
                     public static void sendMessage(org.bukkit.entity.Player player, String text, Placeholder placeholders) {
                         for (var entry : placeholders.values.entrySet()) { text = text.replace(entry.getKey(), entry.getValue()); }
                         player.messages.add(text);
@@ -216,6 +260,11 @@ public class RefundCheck {
                 public class NextGens implements org.bukkit.plugin.Plugin {
                     public static com.muhammaddaffa.mdlib.utils.Config DATA_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
                     public static com.muhammaddaffa.mdlib.utils.Config DEFAULT_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
+                    public static com.muhammaddaffa.mdlib.utils.Config SHOP_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
+                    public static com.muhammaddaffa.mdlib.utils.Config VIEW_GUI_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
+                    public static boolean STOPPING;
+                    public static com.muhammaddaffa.nextgens.refund.RefundManager refunds;
+                    public com.muhammaddaffa.nextgens.refund.RefundManager getRefundManager() { return refunds; }
                     private static final NextGens INSTANCE = new NextGens();
                     public static NextGens getInstance() { return INSTANCE; }
                     public java.util.logging.Logger getLogger() { return java.util.logging.Logger.getLogger("RefundCheck"); }
@@ -229,7 +278,10 @@ public class RefundCheck {
                 """);
         sources.put("com.muhammaddaffa.nextgens.generators.ActiveGenerator", """
                 package com.muhammaddaffa.nextgens.generators;
-                public record ActiveGenerator(org.bukkit.Location getLocation, Generator getGenerator) {}
+                public record ActiveGenerator(org.bukkit.Location getLocation, Generator getGenerator) {
+                    public boolean isCorrupted() { return false; }
+                    public java.util.UUID getOwner() { return org.bukkit.Bukkit.players.keySet().iterator().next(); }
+                }
                 """);
         sources.put("com.muhammaddaffa.nextgens.generators.managers.GeneratorManager", """
                 package com.muhammaddaffa.nextgens.generators.managers;
@@ -237,10 +289,16 @@ public class RefundCheck {
                     public final java.util.Map<String, com.muhammaddaffa.nextgens.generators.Generator> types = new java.util.HashMap<>();
                     public final java.util.Map<java.util.UUID, java.util.List<com.muhammaddaffa.nextgens.generators.ActiveGenerator>> placed = new java.util.HashMap<>();
                     public com.muhammaddaffa.nextgens.generators.Generator getGenerator(String id) { return types.get(id); }
+                    public java.util.Set<String> getGeneratorIDs() { return types.keySet(); }
+                    public int getGeneratorCount(org.bukkit.entity.Player player) { return getActiveGenerator(player).size(); }
+                    public java.util.List<com.muhammaddaffa.nextgens.generators.ActiveGenerator> getActiveGenerator(org.bukkit.entity.Player player) { return getActiveGenerator(player.getUniqueId()); }
                     public java.util.List<com.muhammaddaffa.nextgens.generators.ActiveGenerator> getActiveGenerator(java.util.UUID id) {
                         return new java.util.ArrayList<>(placed.getOrDefault(id, java.util.List.of()));
                     }
-                    public Object getActiveGenerator(org.bukkit.block.Block block) { return null; }
+                    public com.muhammaddaffa.nextgens.generators.ActiveGenerator getActiveGenerator(org.bukkit.block.Block block) {
+                        return placed.values().stream().flatMap(java.util.List::stream).filter(g -> g.getLocation().getBlock() == block).findFirst().orElse(null);
+                    }
+                    public void unregisterGenerator(org.bukkit.block.Block block) { placed.values().forEach(list -> list.removeIf(g -> g.getLocation().getBlock() == block)); }
                     public void unregisterGenerator(org.bukkit.Location location) { placed.values().forEach(list -> list.removeIf(g -> g.getLocation() == location)); }
                 }
                 """);
@@ -295,6 +353,137 @@ public class RefundCheck {
             String pkg = "world.bentobox.bentobox.api.events.team";
             sources.put(pkg + "." + name, "package " + pkg + "; public record " + name + "(java.util.UUID getPlayerUUID) {}");
         }
+        sources.put("org.bukkit.World", """
+                package org.bukkit;
+                public class World {
+                    public final java.util.List<org.bukkit.inventory.ItemStack> drops = new java.util.ArrayList<>();
+                    public String getName() { return "world"; }
+                    public void dropItemNaturally(Location location, org.bukkit.inventory.ItemStack item) { drops.add(item.clone()); }
+                    public void spawnParticle(Object particle, Location location, int count, double x, double y, double z, double extra) {}
+                }
+                """);
+        sources.put("org.bukkit.Particle", "package org.bukkit; public enum Particle { CLOUD }");
+        sources.put("org.bukkit.command.CommandSender", "package org.bukkit.command; public interface CommandSender { default boolean hasPermission(String permission) { return true; } }");
+        sources.put("org.bukkit.plugin.PluginManager", "package org.bukkit.plugin; public class PluginManager { public void callEvent(Object event) {} }");
+        sources.put("org.bukkit.inventory.EquipmentSlot", "package org.bukkit.inventory; public enum EquipmentSlot { HAND }");
+        sources.put("org.bukkit.event.block.BlockBreakEvent", """
+                package org.bukkit.event.block;
+                public record BlockBreakEvent(org.bukkit.block.Block getBlock, org.bukkit.entity.Player getPlayer) {
+                    public void setCancelled(boolean value) {}
+                    public void setDropItems(boolean value) {}
+                    public void setExpToDrop(int value) {}
+                }
+                """);
+        sources.put("org.bukkit.event.player.PlayerInteractEvent", """
+                package org.bukkit.event.player;
+                public record PlayerInteractEvent(org.bukkit.entity.Player getPlayer, org.bukkit.block.Block getClickedBlock) {
+                    public org.bukkit.inventory.EquipmentSlot getHand() { return org.bukkit.inventory.EquipmentSlot.HAND; }
+                    public void setCancelled(boolean value) {}
+                }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.api.events.generators.GeneratorBreakEvent", """
+                package com.muhammaddaffa.nextgens.api.events.generators;
+                public record GeneratorBreakEvent(com.muhammaddaffa.nextgens.generators.Generator generator, org.bukkit.entity.Player player) {
+                    public boolean isCancelled() { return false; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.generators.action.InteractAction", """
+                package com.muhammaddaffa.nextgens.generators.action;
+                public enum InteractAction { LEFT; public static InteractAction find(Object input, InteractAction fallback) { return fallback; } }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.users.models.User", """
+                package com.muhammaddaffa.nextgens.users.models;
+                public record User(java.util.UUID getUniqueId) {
+                    public String getName() { return "RefundPlayer"; }
+                    public boolean isMember(java.util.UUID id) { return true; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.users.UserManager", """
+                package com.muhammaddaffa.nextgens.users;
+                public class UserManager {
+                    public com.muhammaddaffa.nextgens.users.models.User getUser(java.util.UUID id) { return new com.muhammaddaffa.nextgens.users.models.User(id); }
+                    public int getMaxSlot(org.bukkit.entity.Player player) { return 100; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.utils.Utils", """
+                package com.muhammaddaffa.nextgens.utils;
+                public class Utils {
+                    public static void bassSound(org.bukkit.entity.Player player) {}
+                    public static int[] convertListToIntArray(java.util.List<Integer> list) { return list.stream().mapToInt(Integer::intValue).toArray(); }
+                }
+                """);
+        sources.put("com.muhammaddaffa.nextgens.utils.VisualAction", "package com.muhammaddaffa.nextgens.utils; public class VisualAction { public static void send(Object... values) {} }");
+        sources.put("com.muhammaddaffa.mdlib.utils.Executor", "package com.muhammaddaffa.mdlib.utils; public class Executor {}");
+        sources.put("com.muhammaddaffa.mdlib.xseries.particles.XParticle", "package com.muhammaddaffa.mdlib.xseries.particles; public enum XParticle { CLOUD; public Object get() { return this; } }");
+        sources.put("com.muhammaddaffa.mdlib.xseries.XSound", "package com.muhammaddaffa.mdlib.xseries; public enum XSound { UI_BUTTON_CLICK, ENTITY_PLAYER_LEVELUP; public Object get() { return this; } }");
+        for (String name : List.of("OnlinePlayerArg", "StringArg", "IntArg")) {
+            sources.put("com.muhammaddaffa.mdlib.commands.args.builtin." + name,
+                    "package com.muhammaddaffa.mdlib.commands.args.builtin; public class " + name + " {}");
+        }
+        sources.put("com.muhammaddaffa.mdlib.commands.args.ArgSuggester", """
+                package com.muhammaddaffa.mdlib.commands.args;
+                public class ArgSuggester {
+                    public static Object ofDynamic(java.util.function.BiFunction<Object, String, java.util.List<String>> supplier) { return supplier; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.mdlib.commands.commands.RoutedCommand", """
+                package com.muhammaddaffa.mdlib.commands.commands;
+                public class RoutedCommand {
+                    public final CommandPlan plan = new CommandPlan();
+                    public RoutedCommand(String command, String permission) {}
+                    public void alias(java.util.List<String> aliases) {}
+                    public void register() {}
+                    public CommandPlan root() { return plan; }
+                    public static class Context {
+                        public final java.util.Map<String, Object> values = new java.util.HashMap<>();
+                        public <T> T get(String key, Class<T> type) { return type.cast(values.get(key)); }
+                    }
+                    public static class CommandPlan {
+                        public java.util.function.BiConsumer<org.bukkit.command.CommandSender, Context> handler;
+                        public CommandPlan perm(String permission) { return this; }
+                        public CommandPlan arg(String name, Object... type) { return this; }
+                        public CommandPlan argOptional(String name, Object type) { return this; }
+                        public CommandPlan exec(java.util.function.BiConsumer<org.bukkit.command.CommandSender, Context> handler) { this.handler = handler; return this; }
+                    }
+                }
+                """);
+        sources.put("com.muhammaddaffa.mdlib.utils.ItemBuilder", """
+                package com.muhammaddaffa.mdlib.utils;
+                public class ItemBuilder {
+                    private final org.bukkit.inventory.ItemStack item;
+                    public ItemBuilder(org.bukkit.inventory.ItemStack item) { this.item = item; }
+                    public static ItemBuilder fromConfig(Object config, String key) { return new ItemBuilder(new org.bukkit.inventory.ItemStack("icon", 1, 64)); }
+                    public ItemBuilder addLore(java.util.List<String> lore) { return this; }
+                    public ItemBuilder placeholder(Placeholder placeholders) { return this; }
+                    public org.bukkit.inventory.ItemStack build() { return item; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.mdlib.hooks.VaultEconomy", """
+                package com.muhammaddaffa.mdlib.hooks;
+                public class VaultEconomy {
+                    public static double balance = 100;
+                    public static double getBalance(org.bukkit.entity.Player player) { return balance; }
+                    public static void withdraw(org.bukkit.entity.Player player, double amount) { balance -= amount; }
+                }
+                """);
+        sources.put("com.muhammaddaffa.mdlib.fastinv.FastInv", """
+                package com.muhammaddaffa.mdlib.fastinv;
+                public class FastInv {
+                    public final java.util.Map<Integer, java.util.function.Consumer<Click>> clicks = new java.util.HashMap<>();
+                    public FastInv(int size, String title) {}
+                    public void open(org.bukkit.entity.Player player) {}
+                    public void clearItems() { clicks.clear(); }
+                    public FastInv getInventory() { return this; }
+                    public int getSize() { return 9; }
+                    public void setItem(int slot, org.bukkit.inventory.ItemStack item) { clicks.remove(slot); }
+                    public void setItem(int slot, org.bukkit.inventory.ItemStack item, java.util.function.Consumer<Click> click) { clicks.put(slot, click); }
+                    public void setItems(int[] slots, org.bukkit.inventory.ItemStack item, java.util.function.Consumer<Click> click) {
+                        for (int slot : slots) { setItem(slot, item, click); }
+                    }
+                    public record Click(Object getWhoClicked) {}
+                }
+                """);
+        sources.put("org.jetbrains.annotations.Nullable", "package org.jetbrains.annotations; public @interface Nullable {}");
         sources.put("com.muhammaddaffa.nextgens.refund.Check", """
                 package com.muhammaddaffa.nextgens.refund;
                 import com.muhammaddaffa.nextgens.NextGens;
@@ -316,12 +505,16 @@ public class RefundCheck {
                         ExecutorManager.queue.clear();
                         ExecutorManager.folia = false;
                         Bukkit.players.clear();
+                        Bukkit.primary = true;
+                        Bukkit.world.drops.clear();
+                        io.papermc.paper.threadedregions.scheduler.EntityScheduler.onOwner = false;
                         NextGens.DATA_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
                         NextGens.DEFAULT_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
                         types = new GeneratorManager();
                         types.types.put("wheat", new Generator("wheat", "&eWheat Generator", 64));
                         types.types.put("pumpkin", new Generator("pumpkin", "&6Pumpkin Generator", 64));
                         manager = new RefundManager(types, () -> now);
+                        NextGens.refunds = manager;
                         player = new Player();
                         Bukkit.players.put(player.uuid, player);
                         now = 100_000L;
@@ -348,7 +541,142 @@ public class RefundCheck {
                                 new ActiveGenerator(new org.bukkit.Location(), types.getGenerator("wheat")),
                                 new ActiveGenerator(new org.bukkit.Location(), types.getGenerator("pumpkin")))));
                     }
+                    static void give(int amount) {
+                        manager.giveGeneratorItems(player, types.getGenerator("wheat"), amount);
+                    }
+                    static void deliveryPath(String path, int amount) throws Exception {
+                        var users = new com.muhammaddaffa.nextgens.users.UserManager();
+                        switch (path) {
+                            case "admin" -> {
+                                var plan = new com.muhammaddaffa.mdlib.commands.commands.RoutedCommand.CommandPlan();
+                                com.muhammaddaffa.nextgens.commands.subcommands.GiveCommand.handle(plan, types);
+                                var context = new com.muhammaddaffa.mdlib.commands.commands.RoutedCommand.Context();
+                                context.values.put("target", player); context.values.put("id", "wheat"); context.values.put("amount", amount);
+                                plan.handler.accept(Bukkit.getConsoleSender(), context);
+                            }
+                            case "pickup" -> {
+                                place();
+                                var command = new com.muhammaddaffa.nextgens.commands.PickupCommand("pickupgens", types);
+                                command.plan.handler.accept(player, new com.muhammaddaffa.mdlib.commands.commands.RoutedCommand.Context());
+                                require(types.getActiveGenerator(player).isEmpty(), "Pickup removes placed generators");
+                            }
+                            case "view" -> {
+                                place();
+                                NextGens.VIEW_GUI_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
+                                NextGens.VIEW_GUI_CONFIG.config.set("slots", List.of(0, 1, 2, 3));
+                                var gui = new com.muhammaddaffa.nextgens.gui.ViewInventory(player, users.getUser(player.uuid), types, users);
+                                gui.clicks.get(0).accept(new com.muhammaddaffa.mdlib.fastinv.FastInv.Click(player));
+                                require(types.getActiveGenerator(player).size() == 2, "View pickup removes selected generator");
+                            }
+                            case "shop" -> {
+                                NextGens.SHOP_CONFIG = new com.muhammaddaffa.mdlib.utils.Config();
+                                var config = NextGens.SHOP_CONFIG.config;
+                                config.set("items.wheat.type", "GENERATOR"); config.set("items.wheat.generator", "wheat");
+                                config.set("items.wheat.slots", List.of(0)); config.set("items.wheat.cost", 10);
+                                var gui = new com.muhammaddaffa.nextgens.gui.ShopInventory(player, types);
+                                gui.clicks.get(0).accept(new com.muhammaddaffa.mdlib.fastinv.FastInv.Click(player));
+                            }
+                            case "break", "tap" -> {
+                                place();
+                                var listener = new com.muhammaddaffa.nextgens.generators.listeners.GeneratorBreakListener(types, users);
+                                var block = types.getActiveGenerator(player).getFirst().getLocation().getBlock();
+                                boolean animate = path.equals("break");
+                                NextGens.DEFAULT_CONFIG.config.set("animation-break", animate);
+                                NextGens.DEFAULT_CONFIG.config.set("generator-break-options.particles", false);
+                                Object action = animate ? new org.bukkit.event.block.BlockBreakEvent(block, player)
+                                        : new org.bukkit.event.player.PlayerInteractEvent(player, block);
+                                event(listener, animate ? "onBlockBreak" : "generatorBreak", action);
+                                require(block.type == org.bukkit.Material.AIR && types.getActiveGenerator(player).size() == 2, "Break removes selected generator");
+                            }
+                            case "join" -> {
+                                NextGens.DEFAULT_CONFIG.config.set("first-join-generator.generator", "wheat");
+                                NextGens.DEFAULT_CONFIG.config.set("first-join-generator.amount", amount);
+                                event(new com.muhammaddaffa.nextgens.generators.listeners.PlayerJoinListener(types), "onJoin",
+                                        new org.bukkit.event.player.PlayerJoinEvent(player));
+                            }
+                            default -> throw new AssertionError(path);
+                        }
+                        ExecutorManager.drain();
+                    }
                     public static void main(String[] args) throws Exception {
+                        setup(); give(130);
+                        require(player.inventory.count("wheat") == 130 && pending().isEmpty(), "Successful large delivery has no pending record");
+                        require(NextGens.DATA_CONFIG.saves == 0 && ExecutorManager.queue.isEmpty(), "Successful immediate delivery does not save or schedule refunds");
+
+                        setup(); player.inventory.full();
+                        player.inventory.storage[0] = new ItemStack("wheat", 62, 64);
+                        give(130);
+                        require(player.inventory.count("wheat") == 64 && pending().size() == 128, "Register exactly the returned overflow, not already delivered items");
+                        require(((List<?>) NextGens.DATA_CONFIG.saved.get("items." + player.uuid)).size() == 128, "Persist only the remainder immediately");
+                        ExecutorManager.drain();
+                        require(message().contains("128 &eWheat Generator") && message().endsWith("slots=2"), "Immediate remainder reminder has correct count and slots");
+                        player.inventory.storage[1] = null; tick();
+                        require(pending().size() == 64 && player.inventory.count("wheat") == 128, "Partial overflow delivery never duplicates inserted items");
+                        player.inventory.storage[2] = null; tick();
+                        require(pending().isEmpty() && player.inventory.count("wheat") == 192, "Original 62 plus 130 given exactly once");
+
+                        setup(); player.inventory.full(); refund("pumpkin"); give(2); ExecutorManager.drain();
+                        require(pending().equals(List.of("pumpkin", "wheat", "wheat")), "New leftovers preserve older pending types");
+
+                        setup(); ExecutorManager.folia = true; player.inventory.requireOwner = true;
+                        io.papermc.paper.threadedregions.scheduler.EntityScheduler.onOwner = true;
+                        give(2);
+                        require(player.inventory.count("wheat") == 2 && NextGens.DATA_CONFIG.saves == 0, "Folia owner delivers immediately without pending writes");
+
+                        setup(); ExecutorManager.folia = true; player.inventory.requireOwner = true; give(2);
+                        require(pending().size() == 2 && player.inventory.count("wheat") == 0, "Off-region give persists before scheduling");
+                        ExecutorManager.drain();
+                        require(pending().isEmpty() && player.inventory.count("wheat") == 2, "Off-region give delivers on player owner");
+
+                        setup(); Bukkit.primary = false; give(2);
+                        require(pending().size() == 2 && player.inventory.count("wheat") == 0, "Async give waits for main-thread delivery");
+                        player.online = false; ExecutorManager.drain();
+                        require(pending().size() == 2, "Disconnect before scheduled give retains items");
+                        Bukkit.primary = true; player.online = true; tick();
+                        require(pending().isEmpty() && player.inventory.count("wheat") == 2, "Disconnected give resumes once after login");
+
+                        setup(); player.online = false; give(2);
+                        require(pending().size() == 2 && ExecutorManager.queue.isEmpty(), "Offline direct give persists without inventory access");
+                        setup(); manager.stop(); give(2);
+                        require(pending().size() == 2 && player.inventory.count("wheat") == 0, "Give during shutdown is retained");
+
+                        for (String path : List.of("admin", "pickup", "view", "shop", "break", "tap", "join")) {
+                            for (boolean full : List.of(false, true)) {
+                                setup();
+                                NextGens.DEFAULT_CONFIG.config.set("drop-on-break", false);
+                                com.muhammaddaffa.mdlib.hooks.VaultEconomy.balance = 100;
+                                if (full) { player.inventory.full(); }
+                                deliveryPath(path, 3);
+                                int wheat = List.of("admin", "join").contains(path) ? 3 : path.equals("pickup") ? 2 : 1;
+                                int pumpkin = path.equals("pickup") ? 1 : 0;
+                                require(Bukkit.world.drops.isEmpty(), path + " never drops inventory overflow");
+                                require(Collections.frequency(pending(), "wheat") == (full ? wheat : 0)
+                                        && Collections.frequency(pending(), "pumpkin") == (full ? pumpkin : 0), path + " queues only undelivered quantities");
+                                require(player.inventory.count("wheat") == (full ? 0 : wheat)
+                                        && player.inventory.count("pumpkin") == (full ? 0 : pumpkin), path + " delivers exactly once when space is available");
+                                if (!full) { require(NextGens.DATA_CONFIG.saves == 0, path + " successful delivery avoids refund writes"); }
+                                if (path.equals("shop")) { require(com.muhammaddaffa.mdlib.hooks.VaultEconomy.balance == 90, "Shop charges once even when delivery is pending"); }
+                                if (full) {
+                                    player.inventory.storage[0] = null; player.inventory.storage[1] = null; tick();
+                                    require(pending().isEmpty() && player.inventory.count("wheat") == wheat
+                                            && player.inventory.count("pumpkin") == pumpkin, path + " resumes pending delivery without duplicate grants");
+                                }
+                            }
+                        }
+                        for (String path : List.of("break", "tap")) {
+                            for (boolean full : List.of(false, true)) {
+                                setup(); NextGens.DEFAULT_CONFIG.config.set("drop-on-break", true);
+                                if (full) { player.inventory.full(); }
+                                deliveryPath(path, 1);
+                                require(Bukkit.world.drops.size() == 1 && Bukkit.world.drops.getFirst().id.equals("wheat"), "drop-on-break true deliberately drops one generator");
+                                require(pending().isEmpty() && player.inventory.count("wheat") == 0 && NextGens.DATA_CONFIG.saves == 0, "Intentional drop is neither delivered nor registered pending");
+                            }
+                        }
+                        setup(); com.muhammaddaffa.mdlib.hooks.VaultEconomy.balance = 0; deliveryPath("shop", 1);
+                        require(pending().isEmpty() && player.inventory.count("wheat") == 0 && NextGens.DATA_CONFIG.saves == 0, "Unaffordable purchase does not grant or queue a generator");
+                        setup(); player.playedBefore = true; deliveryPath("join", 3);
+                        require(pending().isEmpty() && player.inventory.count("wheat") == 0, "Existing player receives no first-join grant");
+
                         setup();
                         player.inventory.full();
                         refund("wheat", "wheat", "pumpkin");
@@ -536,7 +864,9 @@ public class RefundCheck {
             compilerArgs.add(path.toString());
         }
         for (String source : List.of("refund/RefundManager.java", "refund/listeners/RefundListener.java",
-                "hooks/ssb2/SSB2Listener.java", "hooks/bento/BentoListener.java")) {
+                "hooks/ssb2/SSB2Listener.java", "hooks/bento/BentoListener.java",
+                "commands/PickupCommand.java", "commands/subcommands/GiveCommand.java", "gui/ViewInventory.java", "gui/ShopInventory.java",
+                "gui/helpers/Pagination.java", "generators/listeners/GeneratorBreakListener.java", "generators/listeners/PlayerJoinListener.java")) {
             compilerArgs.add("src/main/java/com/muhammaddaffa/nextgens/" + source);
         }
         if (ToolProvider.getSystemJavaCompiler().run(null, null, null, compilerArgs.toArray(String[]::new)) != 0) {

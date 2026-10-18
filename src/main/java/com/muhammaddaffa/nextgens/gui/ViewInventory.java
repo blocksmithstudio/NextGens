@@ -88,7 +88,7 @@ public class ViewInventory extends FastInv {
                 // set the block to air
                 active.getLocation().getBlock().setType(Material.AIR);
                 // give the item to the player
-                Common.addInventoryItem(this.player, active.getGenerator().createItem(1));
+                NextGens.getInstance().getRefundManager().giveGeneratorItems(this.player, active.getGenerator(), 1);
                 // add visual action
                 Player owner = Bukkit.getPlayer(active.getOwner());
                 if (owner != null) {

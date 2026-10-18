@@ -5,7 +5,6 @@ import com.muhammaddaffa.mdlib.commands.args.builtin.IntArg;
 import com.muhammaddaffa.mdlib.commands.args.builtin.OnlinePlayerArg;
 import com.muhammaddaffa.mdlib.commands.args.builtin.StringArg;
 import com.muhammaddaffa.mdlib.commands.commands.RoutedCommand;
-import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.Generator;
@@ -38,7 +37,7 @@ public class GiveCommand {
                         actualAmount = Math.max(1, amount);
                     }
                     // actually give the item to the player
-                    Common.addInventoryItem(target, generator.createItem(actualAmount));
+                    NextGens.getInstance().getRefundManager().giveGeneratorItems(target, generator, actualAmount);
                     // send message to the sender
                     NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.give-gen", new Placeholder()
                             .add("{amount}", actualAmount)

@@ -10,6 +10,7 @@ import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -49,6 +50,32 @@ public class RefundManager {
 
     public void delayedGiveGeneratorItem(UUID uuid, String id) {
         refundGenerators(uuid, List.of(id));
+    }
+
+    public synchronized void giveGeneratorItems(Player player, Generator generator, int amount) {
+        int remaining = Math.max(1, amount);
+        if (!stopped && player.isOnline() && canAccessInventory(player)) {
+            remaining = addToInventory(player, generator.createItem(remaining));
+        }
+        if (remaining > 0) {
+            refundGenerators(player.getUniqueId(), Collections.nCopies(remaining, generator.id()));
+        }
+    }
+
+    private boolean canAccessInventory(Player player) {
+        if (!ExecutorManager.isFolia()) {
+            return Bukkit.isPrimaryThread();
+        }
+        try {
+            return (boolean) Bukkit.class.getMethod("isOwnedByCurrentRegion", Entity.class).invoke(null, player);
+        } catch (ReflectiveOperationException exception) {
+            return false;
+        }
+    }
+
+    private int addToInventory(Player player, ItemStack stack) {
+        return player.getInventory().addItem(stack).values().stream()
+                .mapToInt(ItemStack::getAmount).sum();
     }
 
     public synchronized void refundGenerators(UUID uuid, List<String> ids) {
@@ -149,8 +176,7 @@ public class RefundManager {
                 int amount = entry.getValue();
                 ItemStack stack = generator.createItem(amount);
                 int stackLimit = Math.max(1, Math.min(stack.getMaxStackSize(), player.getInventory().getMaxStackSize()));
-                int leftover = player.getInventory().addItem(stack).values().stream()
-                        .mapToInt(ItemStack::getAmount).sum();
+                int leftover = addToInventory(player, stack);
                 entry.setValue(leftover);
                 changed |= leftover != amount;
                 if (leftover > 0) {

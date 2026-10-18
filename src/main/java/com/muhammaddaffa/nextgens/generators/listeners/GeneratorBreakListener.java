@@ -1,7 +1,6 @@
 package com.muhammaddaffa.nextgens.generators.listeners;
 
 import com.muhammaddaffa.mdlib.task.ExecutorManager;
-import com.muhammaddaffa.mdlib.utils.Common;
 import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.mdlib.xseries.particles.XParticle;
@@ -157,7 +156,7 @@ public record GeneratorBreakListener(
         if (config.getBoolean("drop-on-break")) {
             block.getWorld().dropItemNaturally(block.getLocation(), generator.createItem(1));
         } else {
-            Common.addInventoryItem(player, generator.createItem(1));
+            NextGens.getInstance().getRefundManager().giveGeneratorItems(player, generator, 1);
         }
     }
 
