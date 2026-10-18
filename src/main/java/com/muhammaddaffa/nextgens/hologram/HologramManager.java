@@ -28,12 +28,12 @@ public class HologramManager {
      * right here in the static initializer, which is exactly what we are avoiding.
      */
     private static final List<BuiltinProvider> BUILTIN_PROVIDERS = List.of(
-            new BuiltinProvider("DecentHolograms", () -> new DecentHologramsProvider()),
-            new BuiltinProvider("FancyHolograms", () -> new FancyHologramProvider()),
-            new BuiltinProvider("HolographicDisplays", () -> new HolographicDisplaysProvider())
+            new BuiltinProvider("DecentHolograms", "DecentHolograms", () -> new DecentHologramsProvider()),
+            new BuiltinProvider("FancyHologram", "FancyHolograms", () -> new FancyHologramProvider()),
+            new BuiltinProvider("HolographicDisplays", "HolographicDisplays", () -> new HolographicDisplaysProvider())
     );
 
-    private record BuiltinProvider(String pluginName, Supplier<HologramProvider> factory) {
+    private record BuiltinProvider(String id, String pluginName, Supplier<HologramProvider> factory) {
     }
 
     public static void register(HologramProvider hologramProvider) {
@@ -67,8 +67,13 @@ public class HologramManager {
      * A provider that fails to load (e.g. an incompatible plugin version) is skipped instead of
      * taking the whole plugin down with it.
      */
-    private static void registerBuiltinProviders() {
+    private static void registerBuiltinProviders(String configId, boolean fallback) {
         for (BuiltinProvider builtin : BUILTIN_PROVIDERS) {
+            boolean configured = builtin.id().equalsIgnoreCase(configId)
+                    || builtin.pluginName().equalsIgnoreCase(configId);
+            if (configured == fallback) {
+                continue;
+            }
             if (!Bukkit.getPluginManager().isPluginEnabled(builtin.pluginName()) || isRegistered(builtin.pluginName())) {
                 continue;
             }
@@ -91,13 +96,12 @@ public class HologramManager {
     }
 
     public void load() {
-        registerBuiltinProviders();
-
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
         String configId = config.getString("holograms.type");
 
         // 1. Try to honour the configured provider first.
         if (configId != null && !configId.isBlank()) {
+            registerBuiltinProviders(configId, false);
             HologramProvider configured = findByConfigId(configId);
             if (configured != null && configured.isAvailable()) {
                 this.provider = configured;
@@ -110,6 +114,7 @@ public class HologramManager {
         }
 
         // 2. Fallback: use the first registered provider whose plugin is installed.
+        registerBuiltinProviders(configId, true);
         for (HologramProvider candidate : HOLOGRAM_PROVIDER_LIST.values()) {
             if (candidate.isAvailable()) {
                 this.provider = candidate;
