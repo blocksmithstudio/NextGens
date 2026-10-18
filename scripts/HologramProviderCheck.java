@@ -60,6 +60,7 @@ public class HologramProviderCheck {
                 "Check", """
                         import com.muhammaddaffa.nextgens.NextGens;
                         import com.muhammaddaffa.nextgens.hologram.HologramManager;
+                        import com.muhammaddaffa.nextgens.hologram.HologramProvider;
                         import com.muhammaddaffa.mdlib.utils.Logger;
                         import org.bukkit.Bukkit;
                         public class Check {
@@ -70,18 +71,35 @@ public class HologramProviderCheck {
                                 Bukkit.manager.enabled.addAll(java.util.List.of(args[1].split(",")));
                                 broken = args[2];
                                 if (args[0].equals("Custom")) {
-                                    HologramManager.register(new com.muhammaddaffa.nextgens.hologram.HologramProvider() {
-                                        public String id() { return "Custom"; }
-                                        public String pluginName() { return "Custom"; }
-                                        public void spawn(String name, org.bukkit.Location location, java.util.List<String> lines) {}
-                                        public void destroy(String name, org.bukkit.Location location) {}
-                                    });
+                                    HologramManager.register(custom("Custom", "Custom", false));
+                                }
+                                if (args.length > 6) {
+                                    switch (args[6]) {
+                                        case "invalid" -> {
+                                            HologramManager.register(null);
+                                            HologramManager.register(custom(null, "Custom", false));
+                                            HologramManager.register(custom("", "Custom", false));
+                                            HologramManager.register(custom("Custom", "Other", false));
+                                        }
+                                        case "order" -> {
+                                            HologramManager.register(custom("ZProvider", "ZProvider", false));
+                                            HologramManager.register(custom("AProvider", "AProvider", false));
+                                        }
+                                        case "reverse" -> {
+                                            HologramManager.register(custom("AProvider", "AProvider", false));
+                                            HologramManager.register(custom("ZProvider", "ZProvider", false));
+                                        }
+                                        case "broken" -> HologramManager.register(custom("Broken", "Broken", true));
+                                    }
                                 }
                                 HologramManager manager = new HologramManager();
                                 manager.load();
                                 String actual = manager.isEnabled() ? manager.getProvider().id() : "none";
                                 if (!actual.equals(args[3])) {
                                     throw new AssertionError("Expected " + args[3] + ", got " + actual);
+                                }
+                                if (actual.equals("Custom") && !manager.getProvider().pluginName().equals("Custom")) {
+                                    throw new AssertionError("Duplicate registration replaced the original provider");
                                 }
                                 String attempts = String.join(",", attempted);
                                 if (!attempts.equals(args[4])) {
@@ -91,6 +109,23 @@ public class HologramProviderCheck {
                                 if (skipped != Boolean.parseBoolean(args[5])) {
                                     throw new AssertionError("Unexpected compatibility warnings: " + Logger.warnings);
                                 }
+                                if (actual.equals("none") && Logger.warnings.stream().noneMatch(line -> line.contains("No supported hologram"))) {
+                                    throw new AssertionError("No-provider warning missing");
+                                }
+                            }
+                            private static HologramProvider custom(String id, String plugin, boolean broken) {
+                                return new HologramProvider() {
+                                    public String id() { return id; }
+                                    public String pluginName() { return plugin; }
+                                    public boolean isAvailable() {
+                                        if (broken) {
+                                            throw new NoClassDefFoundError("missing/custom/API");
+                                        }
+                                        return HologramProvider.super.isAvailable();
+                                    }
+                                    public void spawn(String name, org.bukkit.Location location, java.util.List<String> lines) {}
+                                    public void destroy(String name, org.bukkit.Location location) {}
+                                };
                             }
                         }
                         """
@@ -143,7 +178,16 @@ public class HologramProviderCheck {
                 {"DecentHolograms", "", "", "none", "", "false"},
                 {"FancyHologram", "FancyHolograms", "FancyHolograms", "none", "FancyHolograms", "true"},
                 {"Custom", "Custom,DecentHolograms,FancyHolograms", "FancyHolograms", "Custom", "", "false"},
-                {"Unknown", "DecentHolograms", "", "DecentHolograms", "DecentHolograms", "false"}
+                {"Unknown", "DecentHolograms", "", "DecentHolograms", "DecentHolograms", "false"},
+                {"", "DecentHolograms,FancyHolograms,HolographicDisplays", "FancyHolograms", "DecentHolograms", "DecentHolograms", "false"},
+                {"Unknown", "FancyHolograms,HolographicDisplays", "", "FancyHologram", "FancyHolograms", "false"},
+                {"Unknown", "DecentHolograms,FancyHolograms,HolographicDisplays", "DecentHolograms", "FancyHologram", "DecentHolograms,FancyHolograms", "true"},
+                {"null", "", "", "none", "", "false"},
+                {"HolographicDisplays", "DecentHolograms,FancyHolograms", "", "DecentHolograms", "DecentHolograms", "false"},
+                {"Custom", "Custom,Other,DecentHolograms", "", "Custom", "", "false", "invalid"},
+                {"Unknown", "ZProvider,AProvider,DecentHolograms", "", "ZProvider", "", "false", "order"},
+                {"Unknown", "ZProvider,AProvider,DecentHolograms", "", "AProvider", "", "false", "reverse"},
+                {"Broken", "Broken,DecentHolograms", "", "DecentHolograms", "DecentHolograms", "true", "broken"}
         };
         for (String[] scenario : cases) {
             try (URLClassLoader loader = new URLClassLoader(new URL[]{output.toUri().toURL()}, ClassLoader.getPlatformClassLoader())) {
