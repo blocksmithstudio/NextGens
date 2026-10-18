@@ -86,8 +86,9 @@ holograms:
   #   - DecentHolograms
   #   - FancyHologram
   #   - HolographicDisplays
-  # If the chosen plugin isn't installed (or this is left blank), NextGens will
-  # automatically fall back to any supported hologram plugin it can find.
+  # If the chosen plugin isn't loaded (or this is left blank), use the first
+  # available provider: DecentHolograms, FancyHolograms, HolographicDisplays.
+  # If none is available, warn and keep NextGens running without holograms.
   type: DecentHolograms
   # The options below ONLY apply when FancyHolograms is the active provider.
   fancyholograms:

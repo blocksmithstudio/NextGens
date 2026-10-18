@@ -8,17 +8,19 @@ import com.muhammaddaffa.nextgens.hologram.imp.HolographicDisplaysProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class HologramManager {
 
     private HologramProvider provider;
 
-    private static final Map<String, HologramProvider> HOLOGRAM_PROVIDER_LIST = new ConcurrentHashMap<>();
+    private static final Map<String, HologramProvider> HOLOGRAM_PROVIDER_LIST =
+            Collections.synchronizedMap(new LinkedHashMap<>());
 
     /**
      * The providers shipped with the plugin. They are only instantiated once we know their backing
@@ -28,31 +30,29 @@ public class HologramManager {
      * right here in the static initializer, which is exactly what we are avoiding.
      */
     private static final List<BuiltinProvider> BUILTIN_PROVIDERS = List.of(
-            new BuiltinProvider("DecentHolograms", () -> new DecentHologramsProvider()),
-            new BuiltinProvider("FancyHolograms", () -> new FancyHologramProvider()),
-            new BuiltinProvider("HolographicDisplays", () -> new HolographicDisplaysProvider())
+            new BuiltinProvider("DecentHolograms", "DecentHolograms", () -> new DecentHologramsProvider()),
+            new BuiltinProvider("FancyHologram", "FancyHolograms", () -> new FancyHologramProvider()),
+            new BuiltinProvider("HolographicDisplays", "HolographicDisplays", () -> new HolographicDisplaysProvider())
     );
 
-    private record BuiltinProvider(String pluginName, Supplier<HologramProvider> factory) {
+    private record BuiltinProvider(String id, String pluginName, Supplier<HologramProvider> factory) {
     }
 
     public static void register(HologramProvider hologramProvider) {
         if (hologramProvider == null) {
-            Logger.info("Invalid Holograms Provider! Shutting down the plugin...");
-            Bukkit.getPluginManager().disablePlugins();
+            Logger.warning("Ignoring a null hologram provider.");
             return;
         }
 
         String id = hologramProvider.id();
         if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException(
-                    hologramProvider.getClass().getName() + " returned a null or blank id()"
-            );
+            Logger.warning("Ignoring hologram provider " + hologramProvider.getClass().getName() + " with a null or blank id().");
+            return;
         }
 
         HologramProvider previous = HOLOGRAM_PROVIDER_LIST.putIfAbsent(id.toLowerCase(Locale.ROOT), hologramProvider);
         if (previous != null) {
-            throw new IllegalStateException("A hologram with id " + id + " is already registered by " + previous.getClass().getName());
+            Logger.warning("Hologram provider " + id + " is already registered; keeping the existing provider.");
         }
     }
 
@@ -62,44 +62,56 @@ public class HologramManager {
         return HOLOGRAM_PROVIDER_LIST.remove(id.toLowerCase(Locale.ROOT)) != null;
     }
 
-    /**
-     * Registers every built-in provider whose backing plugin is actually installed and enabled.
-     * A provider that fails to load (e.g. an incompatible plugin version) is skipped instead of
-     * taking the whole plugin down with it.
-     */
-    private static void registerBuiltinProviders() {
-        for (BuiltinProvider builtin : BUILTIN_PROVIDERS) {
-            if (!Bukkit.getPluginManager().isPluginEnabled(builtin.pluginName()) || isRegistered(builtin.pluginName())) {
-                continue;
-            }
-            try {
+    private static HologramProvider loadBuiltinProvider(BuiltinProvider builtin) {
+        if (!Bukkit.getPluginManager().isPluginEnabled(builtin.pluginName())) {
+            return null;
+        }
+        try {
+            HologramProvider candidate = findByConfigId(builtin.pluginName());
+            if (candidate == null) {
                 register(builtin.factory().get());
-            } catch (Throwable ex) {
-                Logger.warning("Failed to hook into " + builtin.pluginName() + " (" +
-                        ex.getClass().getSimpleName() + ": " + ex.getMessage() + "), skipping it.");
+                candidate = findByConfigId(builtin.pluginName());
             }
+            return candidate != null && isAvailable(candidate) ? candidate : null;
+        } catch (LinkageError | RuntimeException ex) {
+            Logger.warning("Failed to hook into " + builtin.pluginName() + " (" +
+                    ex.getClass().getSimpleName() + ": " + ex.getMessage() + "), skipping it.");
+            return null;
         }
     }
 
-    private static boolean isRegistered(String pluginName) {
-        for (HologramProvider registered : HOLOGRAM_PROVIDER_LIST.values()) {
-            if (registered.pluginName().equalsIgnoreCase(pluginName)) {
-                return true;
-            }
+    private static boolean isAvailable(HologramProvider candidate) {
+        try {
+            return candidate.isAvailable();
+        } catch (LinkageError | RuntimeException ex) {
+            Logger.warning("Failed to check hologram provider " + candidate.id() + " (" +
+                    ex.getClass().getSimpleName() + ": " + ex.getMessage() + "), skipping it.");
+            return false;
         }
-        return false;
+    }
+
+    private static List<HologramProvider> registeredProviders() {
+        synchronized (HOLOGRAM_PROVIDER_LIST) {
+            return List.copyOf(HOLOGRAM_PROVIDER_LIST.values());
+        }
     }
 
     public void load() {
-        registerBuiltinProviders();
-
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
         String configId = config.getString("holograms.type");
 
         // 1. Try to honour the configured provider first.
         if (configId != null && !configId.isBlank()) {
             HologramProvider configured = findByConfigId(configId);
-            if (configured != null && configured.isAvailable()) {
+            if (configured == null) {
+                for (BuiltinProvider builtin : BUILTIN_PROVIDERS) {
+                    if (builtin.id().equalsIgnoreCase(configId) || builtin.pluginName().equalsIgnoreCase(configId)) {
+                        configured = loadBuiltinProvider(builtin);
+                        break;
+                    }
+                }
+            }
+            if (configured != null && isAvailable(configured)) {
                 this.provider = configured;
                 Logger.info("Successfully hooked into hologram provider: " + configured.id());
                 return;
@@ -110,8 +122,20 @@ public class HologramManager {
         }
 
         // 2. Fallback: use the first registered provider whose plugin is installed.
-        for (HologramProvider candidate : HOLOGRAM_PROVIDER_LIST.values()) {
-            if (candidate.isAvailable()) {
+        for (HologramProvider candidate : registeredProviders()) {
+            if (isAvailable(candidate)) {
+                this.provider = candidate;
+                Logger.info("Falling back to hologram provider: " + candidate.id());
+                return;
+            }
+        }
+
+        for (BuiltinProvider builtin : BUILTIN_PROVIDERS) {
+            if (builtin.id().equalsIgnoreCase(configId) || builtin.pluginName().equalsIgnoreCase(configId)) {
+                continue;
+            }
+            HologramProvider candidate = loadBuiltinProvider(builtin);
+            if (candidate != null) {
                 this.provider = candidate;
                 Logger.info("Falling back to hologram provider: " + candidate.id());
                 return;
@@ -127,14 +151,14 @@ public class HologramManager {
      * Finds a provider whose id() or backing plugin name matches the config value.
      * This lets the config accept either spelling (e.g. "FancyHologram" or "FancyHolograms").
      */
-    private HologramProvider findByConfigId(String configId) {
+    private static HologramProvider findByConfigId(String configId) {
         // fast path: direct match against the registered id
         HologramProvider byId = HOLOGRAM_PROVIDER_LIST.get(configId.toLowerCase(Locale.ROOT));
         if (byId != null) {
             return byId;
         }
         // fallback: match against the backing plugin name
-        for (HologramProvider candidate : HOLOGRAM_PROVIDER_LIST.values()) {
+        for (HologramProvider candidate : registeredProviders()) {
             if (candidate.pluginName().equalsIgnoreCase(configId)) {
                 return candidate;
             }
