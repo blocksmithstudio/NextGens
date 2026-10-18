@@ -1,14 +1,10 @@
 package com.muhammaddaffa.nextgens.hooks.bento;
 
-import com.muhammaddaffa.mdlib.utils.Common;
-import com.muhammaddaffa.mdlib.utils.Config;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.refund.RefundManager;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -17,6 +13,7 @@ import world.bentobox.bentobox.api.events.team.TeamJoinEvent;
 import world.bentobox.bentobox.api.events.team.TeamKickEvent;
 import world.bentobox.bentobox.api.events.team.TeamLeaveEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,27 +43,16 @@ public record BentoListener(
     }
 
     private void check(UUID uuid) {
-        // get all variables we need
-        Player player = Bukkit.getPlayer(uuid);
         List<ActiveGenerator> generators = this.generatorManager.getActiveGenerator(uuid);
-        // loop through them all
+        List<String> refunds = new ArrayList<>();
         for (ActiveGenerator active : generators) {
-            // unregister the generator
             this.generatorManager.unregisterGenerator(active.getLocation());
-            // set the block to air
             active.getLocation().getBlock().setType(Material.AIR);
-            // check for island pickup option
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("island-pickup")) {
-                // give the generator back
-                if (player == null) {
-                    // if player not online, register it to item join
-                    this.refundManager.delayedGiveGeneratorItem(uuid, active.getGenerator().id());
-                } else {
-                    // if player is online, give them the generators
-                    Common.addInventoryItem(player, active.getGenerator().createItem(1));
-                }
+                refunds.add(active.getGenerator().id());
             }
         }
+        this.refundManager.refundGenerators(uuid, refunds);
     }
 
 }

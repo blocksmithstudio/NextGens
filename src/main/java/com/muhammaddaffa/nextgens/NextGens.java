@@ -152,15 +152,14 @@ public final class NextGens extends JavaPlugin {
 
         // load all generators
         this.generatorManager.loadGenerators();
+        this.refundManager.load();
+        this.refundManager.start();
 
         ExecutorManager.getProvider().asyncLater(1, () -> {
             // load chunk coords for active generators
             this.generatorManager.loadChunkCoords();
             // load users
             this.userRepository.loadUsers();
-
-            // load the refund
-            this.refundManager.load();
 
             // load events
             this.eventManager.loadEvents();
@@ -203,6 +202,7 @@ public final class NextGens extends JavaPlugin {
     @Override
     public void onDisable() {
         STOPPING = true;
+        this.refundManager.stop();
         // shutdown the lib
         MDLib.shutdown();
         // remove all holograms
