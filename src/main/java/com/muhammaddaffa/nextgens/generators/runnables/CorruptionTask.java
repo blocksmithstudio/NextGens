@@ -91,7 +91,7 @@ public class CorruptionTask extends GensRunnable {
                         // increment the counter
                         actuallyCorrupted.getAndIncrement();
                         // Save the generator
-                        ExecutorManager.getProvider().async(() -> this.generatorManager.saveActiveGenerator(active));
+                        this.generatorManager.saveActiveGenerator(active);
                     }
                 });
             }

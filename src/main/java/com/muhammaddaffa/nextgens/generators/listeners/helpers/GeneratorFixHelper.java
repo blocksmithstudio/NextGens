@@ -39,13 +39,13 @@ public class GeneratorFixHelper {
         VisualAction.send(player, NextGens.DEFAULT_CONFIG.getConfig(), "corrupt-fix-options", new Placeholder()
                 .add("{gen}", generator.displayName())
                 .add("{cost}", Common.digits(generator.fixCost())));
+        // Save the generator before any delayed work.
+        NextGens.getInstance().getGeneratorManager().saveActiveGenerator(active);
         // play particle
         ExecutorManager.getProvider().async(() -> {
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("corrupt-fix-options.particles")) {
                 GeneratorParticle.successParticle(block, generator);
             }
-            // Save the generator
-            ExecutorManager.getProvider().async(() -> NextGens.getInstance().getGeneratorManager().saveActiveGenerator(active));
         });
         // give cashback to the player
         Utils.performCashback(player, NextGens.getInstance().getUserManager(), generator.fixCost());
@@ -82,7 +82,7 @@ public class GeneratorFixHelper {
         VaultEconomy.withdraw(player, cost);
         corrupted.forEach(active -> {
             active.setCorrupted(false);
-            ExecutorManager.getProvider().async(() -> generatorManager.saveActiveGenerator(active));
+            generatorManager.saveActiveGenerator(active);
         });
 
         // Sends message and perform cashback

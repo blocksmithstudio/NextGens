@@ -62,6 +62,25 @@ public class RefundManager {
         }
     }
 
+    public synchronized void giveGeneratorItems(Player player, List<Generator> generators) {
+        List<String> refunds = new ArrayList<>();
+        boolean deliver = !stopped && player.isOnline() && canAccessInventory(player);
+        int processed = 0;
+        try {
+            for (Generator generator : generators) {
+                if (!deliver || addToInventory(player, generator.createItem(1)) > 0) {
+                    refunds.add(generator.id());
+                }
+                processed++;
+            }
+        } finally {
+            for (int index = processed; index < generators.size(); index++) {
+                refunds.add(generators.get(index).id());
+            }
+            refundGenerators(player.getUniqueId(), refunds);
+        }
+    }
+
     private boolean canAccessInventory(Player player) {
         if (!ExecutorManager.isFolia()) {
             return Bukkit.isPrimaryThread();

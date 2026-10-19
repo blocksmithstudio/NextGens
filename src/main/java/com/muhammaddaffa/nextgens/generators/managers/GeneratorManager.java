@@ -194,7 +194,7 @@ public class GeneratorManager {
         // Add generator to the chunk coord
         addChunkCoord(finalActive);
         // save the generator on the database
-        ExecutorManager.getProvider().async(() -> this.dbm.saveGenerator(finalActive));
+        this.dbm.saveGenerator(finalActive);
         return active;
     }
 
@@ -220,7 +220,7 @@ public class GeneratorManager {
             // Remove from the chunk coord
             removeChunkCoord(removed);
             // remove the generator from the database
-            ExecutorManager.getProvider().async(() -> this.dbm.deleteGenerator(removed));
+            this.dbm.deleteGenerator(removed);
         }
     }
 
@@ -354,7 +354,9 @@ public class GeneratorManager {
     }
 
     public void saveActiveGenerator(ActiveGenerator active) {
-        this.dbm.saveGenerator(active);
+        if (active != null && this.getActiveGenerator(active.getLocation()) == active) {
+            this.dbm.saveGenerator(active);
+        }
     }
 
     public void saveActiveGenerator() {

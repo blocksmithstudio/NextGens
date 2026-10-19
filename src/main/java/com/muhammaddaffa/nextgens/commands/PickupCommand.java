@@ -7,12 +7,14 @@ import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.mdlib.xseries.XSound;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
+import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PickupCommand extends RoutedCommand {
@@ -69,19 +71,21 @@ public class PickupCommand extends RoutedCommand {
         // get all generators player have
         List<ActiveGenerator> generators = manager.getActiveGenerator(player);
         int total = generators.size();
-        // loop generators
-        for (ActiveGenerator active : generators) {
-            // check if broken pickup option is enabled
-            if (!NextGens.DEFAULT_CONFIG.getConfig().getBoolean("broken-pickup") && active.isCorrupted()) {
-                total--;
-                continue;
+        List<Generator> items = new ArrayList<>();
+        boolean pickupBroken = NextGens.DEFAULT_CONFIG.getConfig().getBoolean("broken-pickup");
+        try {
+            for (ActiveGenerator active : generators) {
+                if (!pickupBroken && active.isCorrupted()) {
+                    total--;
+                    continue;
+                }
+                manager.unregisterGenerator(active.getLocation());
+                active.getLocation().getBlock().setType(Material.AIR);
+                items.add(active.getGenerator());
             }
-            // unregister the generator
-            manager.unregisterGenerator(active.getLocation());
-            // set the block to air
-            active.getLocation().getBlock().setType(Material.AIR);
-            // give the item to the player
-            NextGens.getInstance().getRefundManager().giveGeneratorItems(player, active.getGenerator(), 1);
+        } finally {
+            // Return already collected generators even if a later removal fails.
+            NextGens.getInstance().getRefundManager().giveGeneratorItems(player, items);
         }
         // send message
         NextGens.DEFAULT_CONFIG.sendMessage(sender, "messages.force-pickup", new Placeholder()
