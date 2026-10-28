@@ -22,7 +22,7 @@
 
 - On Windows PowerShell, build with `./mvnw.cmd -B -ntp verify`.
 - On Linux or macOS, build with `./mvnw -B -ntp verify`.
-- The project currently has no automated test sources. A successful Maven build proves compilation and packaging, not Minecraft, Folia, database, hook, or gameplay behavior.
+- Run `bash scripts/check-regressions.sh` for focused regression checks using isolated server, scheduler, economy and database fixtures. It also runs Maven verification. These checks do not replace live Minecraft, Folia or third-party plugin integration testing.
 - After a code or resource change:
   1. Run the Maven verification build.
   2. Confirm exactly one primary versioned JAR exists after excluding `original-*` and `*-shaded.jar` helper files.
