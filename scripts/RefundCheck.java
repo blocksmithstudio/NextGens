@@ -300,6 +300,9 @@ public class RefundCheck {
                     }
                     public void unregisterGenerator(org.bukkit.block.Block block) { placed.values().forEach(list -> list.removeIf(g -> g.getLocation().getBlock() == block)); }
                     public void unregisterGenerator(org.bukkit.Location location) { placed.values().forEach(list -> list.removeIf(g -> g.getLocation() == location)); }
+                    public synchronized boolean unregisterGenerator(com.muhammaddaffa.nextgens.generators.ActiveGenerator expected) {
+                        return placed.values().stream().anyMatch(list -> list.removeIf(g -> g == expected));
+                    }
                 }
                 """);
         sources.put("org.bukkit.event.Listener", "package org.bukkit.event; public interface Listener {}");
@@ -453,17 +456,25 @@ public class RefundCheck {
                     private final org.bukkit.inventory.ItemStack item;
                     public ItemBuilder(org.bukkit.inventory.ItemStack item) { this.item = item; }
                     public static ItemBuilder fromConfig(Object config, String key) { return new ItemBuilder(new org.bukkit.inventory.ItemStack("icon", 1, 64)); }
+                    public static ItemBuilder fromConfig(org.bukkit.entity.Player player, Object config, String key) { return fromConfig(config, key); }
                     public ItemBuilder addLore(java.util.List<String> lore) { return this; }
                     public ItemBuilder placeholder(Placeholder placeholders) { return this; }
                     public org.bukkit.inventory.ItemStack build() { return item; }
                 }
+                """);
+        sources.put("net.milkbowl.vault.economy.EconomyResponse", """
+                package net.milkbowl.vault.economy;
+                public record EconomyResponse(boolean transactionSuccess) {}
                 """);
         sources.put("com.muhammaddaffa.mdlib.hooks.VaultEconomy", """
                 package com.muhammaddaffa.mdlib.hooks;
                 public class VaultEconomy {
                     public static double balance = 100;
                     public static double getBalance(org.bukkit.entity.Player player) { return balance; }
-                    public static void withdraw(org.bukkit.entity.Player player, double amount) { balance -= amount; }
+                    public static net.milkbowl.vault.economy.EconomyResponse withdraw(org.bukkit.entity.Player player, double amount) {
+                        balance -= amount;
+                        return new net.milkbowl.vault.economy.EconomyResponse(true);
+                    }
                 }
                 """);
         sources.put("com.muhammaddaffa.mdlib.fastinv.FastInv", """
