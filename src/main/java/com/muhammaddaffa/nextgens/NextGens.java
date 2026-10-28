@@ -195,15 +195,19 @@ public final class NextGens extends JavaPlugin {
     @Override
     public void onDisable() {
         STOPPING = true;
-        this.refundManager.stop();
-        // shutdown the lib
-        MDLib.shutdown();
-        // remove all holograms
-        GeneratorTask.flush();
-        // save all other things
-        save();
-        // close the database
-        this.dbm.close();
+        try {
+            this.refundManager.stop();
+            ExecutorManager.shutdown();
+            try {
+                GeneratorTask.flush();
+                save();
+            } finally {
+                this.dbm.close();
+            }
+        } finally {
+            // Persistence and its failure diagnostics still need MDLib's logger.
+            MDLib.shutdown();
+        }
     }
 
     private void save() {
