@@ -46,12 +46,12 @@ import java.util.stream.Collectors;
 
 public class GeneratorManager {
 
-    private final Map<String, Generator> generatorMap = new HashMap<>();
+    private final Map<String, Generator> generatorMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ActiveGenerator> activeGenerators = new ConcurrentHashMap<>();
 
     private final Map<ChunkCoord, List<String>> generatorsByChunk = new ConcurrentHashMap<>();
 
-    private final Map<UUID, Set<String>> generatorCount = new HashMap<>();
+    private final Map<UUID, Set<String>> generatorCount = new ConcurrentHashMap<>();
 
     private final DatabaseManager dbm;
     public GeneratorManager(DatabaseManager dbm) {
@@ -60,7 +60,7 @@ public class GeneratorManager {
 
     @Nullable
     public Generator getGenerator(String id) {
-        return this.generatorMap.get(id);
+        return id == null ? null : this.generatorMap.get(id);
     }
 
     @Nullable
@@ -174,7 +174,7 @@ public class GeneratorManager {
         return this.registerGenerator(owner.getUniqueId(), generator, block);
     }
 
-    public ActiveGenerator registerGenerator(UUID owner, @NotNull Generator generator, @NotNull Block block) {
+    public synchronized ActiveGenerator registerGenerator(UUID owner, @NotNull Generator generator, @NotNull Block block) {
         ActiveGenerator active = this.getActiveGenerator(block);
         // check if block is already active generator or not
         if (active == null) {
@@ -188,7 +188,15 @@ public class GeneratorManager {
             // change the generator id
             active.setGenerator(generator);
             // set the block
-            ExecutorManager.getProvider().syncLater(2L, () -> block.setType(generator.item().getType()));
+            ActiveGenerator expected = active;
+            ExecutorManager.getProvider().region(block.getWorld(), block.getX() >> 4, block.getZ() >> 4, () -> {
+                synchronized (this) {
+                    if (this.getActiveGenerator(block) == expected && expected.getGenerator() == generator
+                            && expected.isChunkLoaded()) {
+                        block.setType(generator.item().getType());
+                    }
+                }
+            });
         }
         ActiveGenerator finalActive = active;
         // Add generator to the chunk coord
@@ -207,21 +215,27 @@ public class GeneratorManager {
         this.unregisterGenerator(LocationUtils.serialize(location));
     }
 
-    public void unregisterGenerator(String serialized) {
+    public synchronized void unregisterGenerator(String serialized) {
         ActiveGenerator removed = this.activeGenerators.remove(serialized);
-        // check if the remove is successful
         if (removed != null) {
-            // remove the corrupt status
-            removed.setCorrupted(false);
-            // force remove
-            GeneratorTask.destroy(removed);
-            // remove the generator count
-            this.removeGeneratorCount(removed.getOwner(), removed);
-            // Remove from the chunk coord
-            removeChunkCoord(removed);
-            // remove the generator from the database
-            this.dbm.deleteGenerator(removed);
+            onGeneratorRemoved(removed);
         }
+    }
+
+    public synchronized boolean unregisterGenerator(ActiveGenerator expected) {
+        if (expected == null || !this.activeGenerators.remove(LocationUtils.serialize(expected.getLocation()), expected)) {
+            return false;
+        }
+        onGeneratorRemoved(expected);
+        return true;
+    }
+
+    private void onGeneratorRemoved(ActiveGenerator removed) {
+        removed.setCorrupted(false);
+        GeneratorTask.destroy(removed);
+        this.removeGeneratorCount(removed.getOwner(), removed);
+        removeChunkCoord(removed);
+        this.dbm.deleteGenerator(removed);
     }
 
     public void removeAllGenerator(Player player) {
@@ -233,8 +247,9 @@ public class GeneratorManager {
             // Get the block
             Block block = active.getLocation().getBlock();
             // Unregister the generator and set it to air
-            this.unregisterGenerator(block);
-            block.setType(Material.AIR);
+            if (this.unregisterGenerator(active)) {
+                block.setType(Material.AIR);
+            }
         });
     }
 
@@ -327,26 +342,32 @@ public class GeneratorManager {
         addChunkCoord(active.getLocation());
     }
 
-    public void addChunkCoord(Location location) {
+    public synchronized void addChunkCoord(Location location) {
         if (location == null) return;
 
         ChunkCoord coord = ChunkCoord.fromLocation(location);
-        this.generatorsByChunk
-                .computeIfAbsent(coord, k -> new ArrayList<>())
-                .add(LocationUtils.serialize(location));
+        String serialized = LocationUtils.serialize(location);
+        this.generatorsByChunk.compute(coord, (key, locations) -> {
+            if (locations != null && locations.contains(serialized)) return locations;
+            List<String> updated = new ArrayList<>(locations == null ? List.of() : locations);
+            updated.add(serialized);
+            return List.copyOf(updated);
+        });
     }
 
     public void removeChunkCoord(ActiveGenerator active) {
         removeChunkCoord(active.getLocation());
     }
 
-    public void removeChunkCoord(Location location) {
+    public synchronized void removeChunkCoord(Location location) {
         if (location == null) return;
-
         ChunkCoord coord = ChunkCoord.fromLocation(location);
-        this.generatorsByChunk
-                .computeIfAbsent(coord, k -> new ArrayList<>())
-                .remove(LocationUtils.serialize(location));
+        String serialized = LocationUtils.serialize(location);
+        this.generatorsByChunk.computeIfPresent(coord, (key, locations) -> {
+            List<String> updated = new ArrayList<>(locations);
+            updated.removeIf(serialized::equals);
+            return updated.isEmpty() ? null : List.copyOf(updated);
+        });
     }
 
     public Map<ChunkCoord, List<String>> getGeneratorsByChunk() {
@@ -363,7 +384,7 @@ public class GeneratorManager {
         this.dbm.saveGenerator(this.activeGenerators.values());
     }
 
-    public void loadGenerators() {
+    public synchronized void loadGenerators() {
         // Clear the generators map
         this.generatorMap.clear();
         // log message

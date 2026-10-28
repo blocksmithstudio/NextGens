@@ -120,8 +120,11 @@ public record GeneratorBreakListener(
             return;
         }
 
-        unregisterAndDropGenerator(player, block, config, generator);
-        playBreakVisuals(block, config, active, player);
+        if (unregisterAndDropGenerator(player, block, config, active, generator)) {
+            playBreakVisuals(block, config, active, player);
+        } else {
+            event.setCancelled(true);
+        }
     }
 
     private void handleGeneratorBreak(ActiveGenerator active, Player player, Block block, FileConfiguration config, PlayerInteractEvent event) {
@@ -140,8 +143,11 @@ public record GeneratorBreakListener(
             return;
         }
 
-        unregisterAndDropGenerator(player, block, config, generator);
-        playBreakVisuals(block, config, active, player);
+        if (unregisterAndDropGenerator(player, block, config, active, generator)) {
+            playBreakVisuals(block, config, active, player);
+        } else {
+            event.setCancelled(true);
+        }
     }
 
     private void notifyCorruptedGenerator(Player player) {
@@ -149,15 +155,20 @@ public record GeneratorBreakListener(
         Utils.bassSound(player);
     }
 
-    private void unregisterAndDropGenerator(Player player, Block block, FileConfiguration config, Generator generator) {
-        this.generatorManager.unregisterGenerator(block);
-        block.setType(Material.AIR);
+    private boolean unregisterAndDropGenerator(Player player, Block block, FileConfiguration config,
+                                               ActiveGenerator active, Generator generator) {
+        synchronized (this.generatorManager) {
+            if (active.getGenerator() != generator || active.isCorrupted() || !isPlayerAllowedToBreak(active, player)
+                    || !this.generatorManager.unregisterGenerator(active)) return false;
+            block.setType(Material.AIR);
+        }
 
         if (config.getBoolean("drop-on-break")) {
             block.getWorld().dropItemNaturally(block.getLocation(), generator.createItem(1));
         } else {
             NextGens.getInstance().getRefundManager().giveGeneratorItems(player, generator, 1);
         }
+        return true;
     }
 
     private void playBreakVisuals(Block block, FileConfiguration config, ActiveGenerator active, Player player) {

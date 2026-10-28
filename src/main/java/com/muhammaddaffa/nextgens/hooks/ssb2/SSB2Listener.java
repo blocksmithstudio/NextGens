@@ -60,7 +60,7 @@ public record SSB2Listener(
         List<String> refunds = new ArrayList<>();
         for (ActiveGenerator active : generators) {
             Generator generator = active.getGenerator();
-            this.generatorManager.unregisterGenerator(active.getLocation());
+            if (!this.generatorManager.unregisterGenerator(active)) continue;
             active.getLocation().getBlock().setType(Material.AIR);
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("island-pickup")) {
                 refunds.add(generator.id());

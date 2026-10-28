@@ -79,9 +79,14 @@ public class PickupCommand extends RoutedCommand {
                     total--;
                     continue;
                 }
-                manager.unregisterGenerator(active.getLocation());
-                active.getLocation().getBlock().setType(Material.AIR);
-                items.add(active.getGenerator());
+                synchronized (manager) {
+                    if (!manager.unregisterGenerator(active)) {
+                        total--;
+                        continue;
+                    }
+                    items.add(active.getGenerator());
+                    active.getLocation().getBlock().setType(Material.AIR);
+                }
             }
         } finally {
             // Return already collected generators even if a later removal fails.

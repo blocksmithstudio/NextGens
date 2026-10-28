@@ -46,7 +46,7 @@ public record BentoListener(
         List<ActiveGenerator> generators = this.generatorManager.getActiveGenerator(uuid);
         List<String> refunds = new ArrayList<>();
         for (ActiveGenerator active : generators) {
-            this.generatorManager.unregisterGenerator(active.getLocation());
+            if (!this.generatorManager.unregisterGenerator(active)) continue;
             active.getLocation().getBlock().setType(Material.AIR);
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("island-pickup")) {
                 refunds.add(active.getGenerator().id());

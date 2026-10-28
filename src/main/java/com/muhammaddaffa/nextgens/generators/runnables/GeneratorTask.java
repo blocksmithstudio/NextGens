@@ -192,6 +192,11 @@ public class GeneratorTask extends GensRunnable {
                 ExecutorManager.getProvider().region(active.getLocation().getWorld(),
                         active.getLocation().getBlockX() >> 4,
                         active.getLocation().getBlockZ() >> 4, () -> {
+                    if (this.generatorManager.getActiveGenerator(active.getLocation()) != active ||
+                            active.getGenerator() != generator || !active.isChunkLoaded() ||
+                            (Settings.CORRUPTION_ENABLED && active.isCorrupted())) {
+                        return;
+                    }
                 // execute drop mechanics
                 //Logger.info("Generator " + generator.id() + " is dropping item!");
                 Block block = active.getLocation().getBlock();

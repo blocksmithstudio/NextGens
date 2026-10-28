@@ -80,13 +80,17 @@ public class ViewInventory extends FastInv {
                     .add("{z}", Common.digits(active.getLocation().getBlockZ()))
                     .add("{world}", active.getLocation().getWorld().getName()));
 
-            boolean finalIsAdditionalLore = isAdditionalLore;
             this.setItem(slot, builder.build(), event -> {
-                if (!finalIsAdditionalLore) return;
-                // unregister the generator
-                this.generatorManager.unregisterGenerator(active.getLocation());
-                // set the block to air
-                active.getLocation().getBlock().setType(Material.AIR);
+                String permission = this.player.getUniqueId().equals(active.getOwner())
+                        ? config.getString("pickup-own") : config.getString("pickup-others");
+                if (permission == null || !this.player.hasPermission(permission)) return;
+                synchronized (this.generatorManager) {
+                    if (!this.generatorManager.unregisterGenerator(active)) {
+                        this.setAllItems();
+                        return;
+                    }
+                    active.getLocation().getBlock().setType(Material.AIR);
+                }
                 // give the item to the player
                 NextGens.getInstance().getRefundManager().giveGeneratorItems(this.player, active.getGenerator(), 1);
                 // add visual action
