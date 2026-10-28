@@ -14,6 +14,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import net.milkbowl.vault.economy.EconomyResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,8 +106,17 @@ public class ShopInventory extends FastInv {
                         }
                         return;
                     }
-                    // reduce the amount
-                    VaultEconomy.withdraw(this.player, cost);
+                    // Grant the purchase only after the economy confirms payment.
+                    try {
+                        EconomyResponse response = VaultEconomy.withdraw(this.player, cost);
+                        if (response == null || !response.transactionSuccess()) {
+                            NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.transaction-failed");
+                            return;
+                        }
+                    } catch (RuntimeException exception) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.transaction-failed");
+                        return;
+                    }
                     // give the generator
                     NextGens.getInstance().getRefundManager().giveGeneratorItems(this.player, generator, 1);
                     // send message
