@@ -104,39 +104,21 @@ public class CorruptionTask extends GensRunnable {
     }
 
     private List<ActiveGenerator> getPossiblyInfectedGenerators() {
-        // get the percentage
-        int percentage = Settings.CORRUPTION_PERCENTAGE;
-        // get total generators that will be infected
         List<ActiveGenerator> activeGenerators = this.generatorManager.getActiveGenerator()
                 .stream()
                 .filter(active -> !active.isCorrupted())
                 .toList();
-        int total = activeGenerators.size();
-        int totalInfected = (total * percentage) / 100;
-        // get random active generator
+        int percentage = Math.max(0, Math.min(100, Settings.CORRUPTION_PERCENTAGE));
+        int totalInfected = (int) ((long) activeGenerators.size() * percentage / 100);
         List<String> blacklisted = Settings.CORRUPTION_BLACKLISTED_GENERATORS;
-        Set<Integer> checked = new HashSet<>();
-        List<ActiveGenerator> corrupted = new ArrayList<>();
-
-        while (corrupted.size() < totalInfected) {
-            // get random active generator
-            int index = ThreadLocalRandom.current().nextInt(total);
-            if (checked.contains(index)) {
-                continue;
+        List<ActiveGenerator> eligible = new ArrayList<>();
+        for (ActiveGenerator active : activeGenerators) {
+            if (active.getGenerator() != null && !blacklisted.contains(active.getGenerator().id())) {
+                eligible.add(active);
             }
-            ActiveGenerator active = activeGenerators.get(index);
-            // blacklist check, or corrupted check
-            if (active == null || active.getGenerator() == null ||
-                    blacklisted.contains(active.getGenerator().id()) || active.isCorrupted()) {
-                continue;
-            }
-            // proceed to corrupt the generator
-            corrupted.add(active);
-            // add the random number
-            checked.add(index);
         }
-
-        return corrupted;
+        Collections.shuffle(eligible);
+        return eligible.subList(0, Math.min(totalInfected, eligible.size()));
     }
 
     public int getTimer() {
