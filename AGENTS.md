@@ -16,6 +16,7 @@
 - Make the narrowest change that satisfies the requested behavior. Do not refactor unrelated code or update unrelated dependencies.
 - When behavior is configurable, keep the bundled YAML defaults, config loading/reload behavior, messages, placeholders, and documentation consistent.
 - Do not commit, push, open or merge a pull request, tag a release, publish an artifact, or rewrite history unless the user explicitly asks for that action.
+- Commit messages must follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `<type>[optional scope]: <description>` (for example, `fix(generators): prevent duplicate refunds`). Never use `codex/` as a commit-message prefix; branch names and commit messages are separate. This convention does not authorize committing or pushing.
 - Never force-push.
 
 ## Build and verification
