@@ -379,6 +379,7 @@ messages:
   reload: '&6[NextGens] &aYou have reloaded the configuration!'
   not-owner: '&6[NextGens] &cYou do not own this generator!'
   no-upgrade: '&6[NextGens] &cThis generator cannot be upgraded anymore!'
+  transaction-failed: '&6[NextGens] &cThe payment could not be completed. Please try again.'
   not-enough-money: '&6[NextGens] &cYou don''t have enough money! (${money}/${upgradecost})'
   max-gen: '&6[NextGens] &cYou can''t place more generator!'
   target-not-found: '&6[NextGens] &cThat player is not online!'

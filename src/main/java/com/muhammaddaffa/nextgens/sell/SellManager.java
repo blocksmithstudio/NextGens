@@ -3,7 +3,6 @@ package com.muhammaddaffa.nextgens.sell;
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
 import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
-import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.api.GeneratorAPI;
@@ -24,11 +23,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import net.milkbowl.vault.economy.EconomyResponse;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SellManager {
 
     private final UserManager userManager;
     private final EventManager eventManager;
+    private final Set<Inventory> activeSales = ConcurrentHashMap.newKeySet();
 
     public SellManager(UserManager userManager, EventManager eventManager) {
         this.userManager = userManager;
@@ -39,9 +47,14 @@ public class SellManager {
         GeneratorAPI api = NextGens.getApi();
         User user = userManager.getUser(player);
         Double value = api.getWorth(stack);
-        if (value == null) return false;
-        // Sell the item
-        VaultEconomy.deposit(player, value);
+        if (value == null || !Double.isFinite(value) || value <= 0) return false;
+        // Leave the drop available when the economy provider rejects the payment.
+        try {
+            EconomyResponse response = VaultEconomy.deposit(player, value);
+            if (response == null || !response.transactionSuccess()) return false;
+        } catch (RuntimeException exception) {
+            return false;
+        }
         // Update statistics
         user.addEarnings(value);
         user.addItemsSold(stack.getAmount());
@@ -63,7 +76,22 @@ public class SellManager {
     }
 
     public SellData performSell(Player player, SellwandData sellwand, boolean silent, @Nullable Block block, Inventory... inventories) {
+        List<Inventory> reserved = new ArrayList<>();
+        try {
+            // Event and economy callbacks must not sell the same inventory recursively.
+            for (Inventory inventory : new LinkedHashSet<>(Arrays.asList(inventories))) {
+                if (inventory == null || !activeSales.add(inventory)) return null;
+                reserved.add(inventory);
+            }
+            return sellInventories(player, sellwand, silent, block, reserved);
+        } finally {
+            reserved.forEach(activeSales::remove);
+        }
+    }
+
+    private SellData sellInventories(Player player, SellwandData sellwand, boolean silent, @Nullable Block block, List<Inventory> inventories) {
         GeneratorAPI api = NextGens.getApi();
+        List<SaleItem> items = new ArrayList<>();
         double totalValue = 0.0;
         int totalItems = 0;
 
@@ -73,15 +101,13 @@ public class SellManager {
                 ItemStack stack = inventory.getItem(i);
                 Double worth = api.getWorth(stack);
                 // If item is worthless, just skip it
-                if (worth == null || worth <= 0) {
+                if (worth == null || !Double.isFinite(worth) || worth <= 0) {
                     continue;
                 }
                 // Otherwise, we should add it
                 totalItems += stack.getAmount();
                 totalValue += worth;
-                // Remove the item completely, double remove to make sure
-                stack.setAmount(0);
-                inventory.setItem(i, null);
+                items.add(new SaleItem(inventory, i, stack.clone()));
             }
         }
 
@@ -104,7 +130,33 @@ public class SellManager {
         if (sellEvent.isCancelled()) return null;
 
         SellData data = sellEvent.getSellData();
-        VaultEconomy.deposit(player, data.getTotalValue());
+        if (data == null || !Double.isFinite(data.getTotalValue()) || data.getTotalValue() < 0) return null;
+        // A listener may have changed the inventory while handling the event.
+        for (SaleItem item : items) {
+            if (!item.stack().equals(item.inventory().getItem(item.slot()))) return null;
+        }
+
+        boolean paid = false;
+        try {
+            for (SaleItem item : items) {
+                item.inventory().setItem(item.slot(), null);
+            }
+            EconomyResponse response = VaultEconomy.deposit(player, data.getTotalValue());
+            paid = response != null && response.transactionSuccess();
+            if (!paid) {
+                if (!silent) NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.transaction-failed");
+                return null;
+            }
+        } catch (RuntimeException exception) {
+            if (!silent) NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.transaction-failed");
+            return null;
+        } finally {
+            if (!paid) {
+                for (SaleItem item : items) {
+                    item.inventory().setItem(item.slot(), item.stack());
+                }
+            }
+        }
 
         if (!silent) {
             sendSellVisual(player, data);
@@ -124,6 +176,8 @@ public class SellManager {
 
         return data;
     }
+
+    private record SaleItem(Inventory inventory, int slot, ItemStack stack) { }
 
     private void sendSellVisual(Player player, SellData data) {
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
