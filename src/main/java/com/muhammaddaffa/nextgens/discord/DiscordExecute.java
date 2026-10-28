@@ -2,6 +2,7 @@ package com.muhammaddaffa.nextgens.discord;
 
 import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
+import com.muhammaddaffa.nextgens.utils.GensRunnable;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,19 +44,22 @@ public final class DiscordExecute {
             ));
 
             try {
-                plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, task -> {
-                    if (messageQueue.isEmpty()) {
-                        queueWorkerRunning.set(false);
+                new GensRunnable() {
+                    @Override
+                    public void run() {
+                        if (messageQueue.isEmpty()) {
+                            queueWorkerRunning.set(false);
 
-                        // A producer may have queued a message while the worker was stopping.
-                        if (messageQueue.isEmpty() || !queueWorkerRunning.compareAndSet(false, true)) {
-                            task.cancel();
+                            // A producer may have queued a message while the worker was stopping.
+                            if (messageQueue.isEmpty() || !queueWorkerRunning.compareAndSet(false, true)) {
+                                cancel();
+                            }
+                            return;
                         }
-                        return;
-                    }
 
-                    sendQueuedMessages(plugin);
-                }, 1L, interval);
+                        sendQueuedMessages(plugin);
+                    }
+                }.runTaskTimerAsynchronously(plugin, 1L, interval);
             } catch (RuntimeException exception) {
                 queueWorkerRunning.set(false);
                 throw exception;
@@ -116,7 +120,7 @@ public final class DiscordExecute {
         try {
             webhook.execute();
         } catch (IOException | RuntimeException exception) {
-            requeueOrDiscard(plugin, queuedMessages, exception.getMessage());
+            requeueOrDiscard(plugin, queuedMessages, exception.getClass().getSimpleName());
         }
     }
 

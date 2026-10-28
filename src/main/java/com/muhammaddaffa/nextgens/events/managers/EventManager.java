@@ -245,7 +245,12 @@ public class EventManager {
             message = message.replace(entry.getKey(), entry.getValue());
         }
 
-        DiscordExecute.sendDiscordNotification(NextGens.getInstance(), message);
+        try {
+            DiscordExecute.sendDiscordNotification(NextGens.getInstance(), message);
+        } catch (RuntimeException exception) {
+            Logger.warning("Could not queue Discord event notification (" +
+                    exception.getClass().getSimpleName() + ").");
+        }
     }
 
     public void load() {
