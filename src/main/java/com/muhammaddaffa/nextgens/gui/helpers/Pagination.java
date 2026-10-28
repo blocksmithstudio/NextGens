@@ -16,27 +16,15 @@ public class Pagination<T> {
 
     public Pagination(List<T> items, List<Integer> slots) {
         int max = slots.size();
-        if (items.size() < max) {
-            this.pageItems.put(this.totalPage, items);
+        if (max == 0 || items.isEmpty()) {
+            this.pageItems.put(1, new ArrayList<>());
             return;
         }
-
-        List<T> pages = new ArrayList<>();
-
-        for (int i = 0; i < items.size(); i++) {
-            // If the total added skins is over the max item amount
-            // Put the skins into the map and "create a new page"
-            if(i % max == 0 && i != 0){
-                this.pageItems.put(this.totalPage, pages);
-                pages = new ArrayList<>();
-                this.totalPage++;
-            }
-            // If the leftover skins doesn't exceed the max amount
-            if(i % max != 0 && i == (items.size() - 1)){
-                this.pageItems.put(this.totalPage, pages);
-            }
-            pages.add(items.get(i));
+        for (int start = 0; start < items.size(); start += max) {
+            this.pageItems.put(start / max + 1,
+                    new ArrayList<>(items.subList(start, Math.min(start + max, items.size()))));
         }
+        this.totalPage = this.pageItems.size();
     }
 
     public boolean hasNextPage() {

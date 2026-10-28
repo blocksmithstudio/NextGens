@@ -10,7 +10,6 @@ import com.muhammaddaffa.nextgens.autosell.Autosell;
 import com.muhammaddaffa.nextgens.users.models.User;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
-import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -48,14 +47,6 @@ public class PlayerSettingsInventory extends FastInv {
             // retrieve the data
             String type = config.getString("items." + key + ".type");
             List<Integer> slots = config.getIntegerList("items." + key + ".slots");
-            // retrieve the display-name and lore
-            String displayName = config.getString("items." + key + ".display-name");
-            List<String> lore = config.getStringList("items." + key + ".lore");
-
-            // parse the placeholder
-            displayName = PlaceholderAPI.setPlaceholders(player, displayName);
-            lore = PlaceholderAPI.setPlaceholders(player, lore);
-
             // make a new variable to make it clean
             Placeholder placeholder = new Placeholder()
                     .add("{status_cashback}", user.isToggleCashback() ? on : off)
@@ -63,10 +54,7 @@ public class PlayerSettingsInventory extends FastInv {
                     .add("{status_gens_autosell}", user.isToggleGensAutoSell() ? on : off);
 
             // build the item by fromConfig
-            ItemBuilder builder = ItemBuilder.fromConfig(config, "items." + key, placeholder)
-                    .name(displayName)
-                    .lore(lore)
-                    .placeholder(placeholder);
+            ItemBuilder builder = ItemBuilder.fromConfig(this.player, config, "items." + key, placeholder);
 
             // build it
             ItemStack stack = builder.build();

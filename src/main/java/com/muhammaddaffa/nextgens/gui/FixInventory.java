@@ -111,7 +111,7 @@ public class FixInventory extends FastInv {
         // get the slots
         List<Integer> slots = config.getIntegerList("confirm-slots");
         // create the item
-        ItemBuilder builder = ItemBuilder.fromConfig(config, "confirm-button");
+        ItemBuilder builder = ItemBuilder.fromConfig(this.player, config, "confirm-button");
         if (builder == null) {
             return;
         }
@@ -128,7 +128,7 @@ public class FixInventory extends FastInv {
         // get the slots
         List<Integer> slots = config.getIntegerList("cancel-slots");
         // create the item
-        ItemBuilder builder = ItemBuilder.fromConfig(config, "cancel-button");
+        ItemBuilder builder = ItemBuilder.fromConfig(this.player, config, "cancel-button");
         if (builder == null) {
             return;
         }

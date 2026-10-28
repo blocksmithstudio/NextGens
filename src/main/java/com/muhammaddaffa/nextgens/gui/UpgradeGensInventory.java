@@ -51,7 +51,7 @@ public class UpgradeGensInventory extends FastInv {
         for (String key : config.getConfigurationSection("items").getKeys(false)) {
             String type = config.getString("items." + key + ".type", "DUMMY");
             List<Integer> slots = config.getIntegerList("items." + key + ".slots");
-            ItemStack stack = ItemBuilder.fromConfig(config, "items." + key)
+            ItemStack stack = ItemBuilder.fromConfig(this.player, config, "items." + key)
                     .flags(ItemFlag.values())
                     .build();
             // Set the items
@@ -86,9 +86,7 @@ public class UpgradeGensInventory extends FastInv {
         int currentPage = this.pagination != null ? this.pagination.currentPage : 1;
 
         this.pagination = new Pagination<>(generated, slots);
-        if (this.pagination.getItems(currentPage) == null) {
-            this.pagination.currentPage = 1;
-        }
+        this.pagination.currentPage = Math.min(currentPage, this.pagination.totalPage);
 
         List<MergedGenerator> items = this.pagination.getItems();
         if (items != null && !items.isEmpty()) {
@@ -164,7 +162,7 @@ public class UpgradeGensInventory extends FastInv {
     }
 
     public ItemStack getProgressItem(int upgraded, int total) {
-        return ItemBuilder.fromConfig(NextGens.UPGRADE_GENS_GUI_CONFIG, "upgrade-progress")
+        return ItemBuilder.fromConfig(this.player, NextGens.UPGRADE_GENS_GUI_CONFIG, "upgrade-progress")
                 .placeholder(new Placeholder()
                         .add("{upgraded}", Common.digits(upgraded))
                         .add("{total}", Common.digits(total)))

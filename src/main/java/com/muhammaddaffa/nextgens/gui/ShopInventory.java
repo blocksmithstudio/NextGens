@@ -77,7 +77,7 @@ public class ShopInventory extends FastInv {
             String type = config.getString(key + ".type", "dummy");
             List<Integer> slots = config.getIntegerList(key + ".slots");
             List<String> commands = config.getStringList(key + ".commands");
-            ItemBuilder builder = ItemBuilder.fromConfig(config, key);
+            ItemBuilder builder = ItemBuilder.fromConfig(this.player, config, key);
             if (builder == null) continue;
             ItemStack stack = builder.build();
 
