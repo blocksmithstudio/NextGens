@@ -174,6 +174,17 @@ public class GeneratorManager {
         return this.activeGenerators.get(serialized);
     }
 
+    public boolean isKnownGenerator(@Nullable Block block) {
+        return block != null && this.isKnownGenerator(block.getLocation());
+    }
+
+    public boolean isKnownGenerator(@Nullable Location location) {
+        if (location == null || location.getWorld() == null) return false;
+        String serialized = LocationUtils.serialize(location);
+        return this.activeGenerators.containsKey(serialized)
+                || this.generatorsByChunk.getOrDefault(ChunkCoord.fromLocation(location), List.of()).contains(serialized);
+    }
+
     public ActiveGenerator registerGenerator(Player owner, @NotNull Generator generator, @NotNull Block block) {
         return this.registerGenerator(owner.getUniqueId(), generator, block);
     }

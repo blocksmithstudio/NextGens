@@ -38,6 +38,10 @@ public record GeneratorPlaceListener(
     private void generatorPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         Block block = event.getBlockPlaced();
+        if (this.generatorManager.isKnownGenerator(block)) {
+            event.setCancelled(true);
+            return;
+        }
         ItemStack stack = event.getItemInHand();
         FileConfiguration config = NextGens.DEFAULT_CONFIG.getConfig();
         Generator generator = this.generatorManager.getGenerator(stack);

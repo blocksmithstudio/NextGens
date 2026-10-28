@@ -46,14 +46,14 @@ public record GeneratorPreventionListener(
     private void onWaterFlow(BlockFromToEvent event) {
         if (event.getBlock().getType() != Material.WATER && event.getBlock().getType() != Material.WATER_CAULDRON) return;
 
-        if (this.generatorManager.getActiveGenerator(event.getToBlock()) != null) {
+        if (this.generatorManager.isKnownGenerator(event.getToBlock())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     private void onPhysicBlock(BlockPhysicsEvent event) {
-        if (this.generatorManager.getActiveGenerator(event.getBlock()) != null) {
+        if (this.generatorManager.isKnownGenerator(event.getBlock())) {
             event.setCancelled(true);
         }
     }
@@ -63,21 +63,21 @@ public record GeneratorPreventionListener(
         // check if it's not falling block then return
         if (!(event.getEntity() instanceof FallingBlock)) return;
         // if it's generator then cancel
-        if (this.generatorManager.getActiveGenerator(event.getBlock()) != null) {
+        if (this.generatorManager.isKnownGenerator(event.getBlock())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     private void onDecay(LeavesDecayEvent event) {
-        if (this.generatorManager.getActiveGenerator(event.getBlock()) != null) {
+        if (this.generatorManager.isKnownGenerator(event.getBlock())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     private void onBlockFade(BlockFadeEvent event) {
-        if (this.generatorManager.getActiveGenerator(event.getBlock()) != null) {
+        if (this.generatorManager.isKnownGenerator(event.getBlock())) {
             event.setCancelled(true);
         }
     }
@@ -143,12 +143,11 @@ public record GeneratorPreventionListener(
     private void prevention(BlockBreakEvent event) {
         // get all variables we want
         Block block = event.getBlock();
-        ActiveGenerator active = this.generatorManager.getActiveGenerator(block);
-        // cancel if the block is active generator
-        if (active != null) {
+        // Indexed generators need protection while their chunk is still loading.
+        if (this.generatorManager.isKnownGenerator(block)) {
             event.setCancelled(true);
-            // play bass sound
-            Utils.bassSound(event.getPlayer());
+            // Keep the usual feedback for loaded generators.
+            if (this.generatorManager.getActiveGenerator(block) != null) Utils.bassSound(event.getPlayer());
         }
     }
 
@@ -183,15 +182,12 @@ public record GeneratorPreventionListener(
 
     @EventHandler(priority = EventPriority.HIGHEST)
     private void prevention(SpongeAbsorbEvent event) {
-        ActiveGenerator active = this.generatorManager.getActiveGenerator(event.getBlock());
-        if (active != null) event.setCancelled(true);
+        if (this.generatorManager.isKnownGenerator(event.getBlock())) event.setCancelled(true);
     }
 
     private void checkPiston(BlockPistonEvent event, List<Block> blocks) {
         for (Block block : blocks) {
-            // get active generator from block
-            ActiveGenerator active = this.generatorManager.getActiveGenerator(block);
-            if (active != null) {
+            if (this.generatorManager.isKnownGenerator(block)) {
                 event.setCancelled(true);
             }
         }
@@ -200,15 +196,16 @@ public record GeneratorPreventionListener(
     private void checkExplosion(List<Block> blocks) {
         if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("anti-explosion")) {
             // remove generator blocks
-            blocks.removeIf(block -> this.generatorManager.getActiveGenerator(block) != null);
+            blocks.removeIf(this.generatorManager::isKnownGenerator);
         } else {
-            // if option is disabled, unregister active generator
-            for (Block block : blocks) {
+            // Pending rows cannot be removed safely until their owner/state has loaded.
+            blocks.removeIf(block -> {
                 ActiveGenerator active = this.generatorManager.getActiveGenerator(block);
                 if (active != null) {
-                    this.generatorManager.unregisterGenerator(active.getLocation());
+                    return !this.generatorManager.unregisterGenerator(active);
                 }
-            }
+                return this.generatorManager.isKnownGenerator(block);
+            });
         }
     }
 
@@ -232,7 +229,7 @@ public record GeneratorPreventionListener(
     }
 
     private boolean isGeneratorBlock(Block block) {
-        return block != null && this.generatorManager.getActiveGenerator(block) != null;
+        return this.generatorManager.isKnownGenerator(block);
     }
 
 }
