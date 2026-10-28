@@ -201,7 +201,7 @@ public class User {
     }
 
     public void setInterval(int amount) {
-        this.interval = interval;
+        this.interval = amount;
     }
 
     public Set<UUID> getMemberSet() {
