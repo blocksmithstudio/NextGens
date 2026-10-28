@@ -11,6 +11,11 @@ java_cmd="${JAVA_HOME:+$JAVA_HOME/bin/}java"
 javac_cmd="${JAVA_HOME:+$JAVA_HOME/bin/}javac"
 classpath="target/classes:$(cat target/regression-classpath.txt)"
 
+# Keep the standalone CI checks in the same local verification command.
+for check in HologramProviderCheck RefundCheck; do
+  "$java_cmd" "scripts/$check.java"
+done
+
 # Exercise the built classes with disposable database and scheduler fixtures.
 for check in LifecycleRegression StartupLoadingRegression ShutdownRegression; do
   "$java_cmd" -cp "target/test-classes:$classpath" "com.muhammaddaffa.nextgens.$check"
