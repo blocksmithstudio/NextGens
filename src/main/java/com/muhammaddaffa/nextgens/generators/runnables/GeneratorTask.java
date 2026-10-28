@@ -39,7 +39,7 @@ public class GeneratorTask extends GensRunnable {
         // set back the runnable
         runnable = new GeneratorTask(generatorManager, eventManager, userManager);
         // run the task
-        runnable.runTaskTimerAsynchronously(NextGens.getInstance(), 5L, 20L);
+        runnable.runTaskTimerAsynchronously(NextGens.getInstance(), 20L, 5L);
     }
 
     public static void flush() {
