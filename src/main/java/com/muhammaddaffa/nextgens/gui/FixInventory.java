@@ -2,18 +2,14 @@ package com.muhammaddaffa.nextgens.gui;
 
 import com.muhammaddaffa.mdlib.fastinv.FastInv;
 import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
-import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.*;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
 import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.listeners.helpers.GeneratorFixHelper;
-import com.muhammaddaffa.nextgens.generators.listeners.helpers.GeneratorParticle;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.users.UserManager;
 import com.muhammaddaffa.nextgens.utils.*;
-import org.bukkit.Particle;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -121,33 +117,7 @@ public class FixInventory extends FastInv {
         }
         // set the item
         this.setItems(Utils.convertListToIntArray(slots), builder.build(), event -> {
-            Block block = this.active.getLocation().getBlock();
-            // money check
-            if (VaultEconomy.getBalance(this.player) < this.generator.fixCost()) {
-                NextGens.DEFAULT_CONFIG.sendMessage(this.player, "messages.not-enough-money", new Placeholder()
-                        .add("{money}", Common.digits(VaultEconomy.getBalance(this.player)))
-                        .add("{upgradecost}", Common.digits(this.generator.fixCost()))
-                        .add("{remaining}", Common.digits(VaultEconomy.getBalance(this.player) - this.generator.fixCost())));
-                // play bass sound
-                Utils.bassSound(this.player);
-                // close the gui
-                this.player.closeInventory();
-                return;
-            }
-            // take the money from player
-            VaultEconomy.withdraw(this.player, this.generator.fixCost());
-            // fix the generator
-            this.active.setCorrupted(false);
-            // visual actions
-            VisualAction.send(this.player, NextGens.DEFAULT_CONFIG.getConfig(), "corrupt-fix-options", new Placeholder()
-                    .add("{gen}", this.generator.displayName())
-                    .add("{cost}", Common.digits(this.generator.fixCost())));
-            // play particle
-            ExecutorManager.getProvider().async(() -> {
-                if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("corrupt-fix-options.particles")) {
-                    GeneratorParticle.successParticle(block, generator);
-                }
-            });
+            GeneratorFixHelper.fixGenerator(player, active, generator);
             // close the inventory
             this.player.closeInventory();
         });

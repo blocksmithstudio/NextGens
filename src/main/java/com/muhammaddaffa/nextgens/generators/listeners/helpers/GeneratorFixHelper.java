@@ -1,9 +1,7 @@
 package com.muhammaddaffa.nextgens.generators.listeners.helpers;
 
-import com.muhammaddaffa.mdlib.hooks.VaultEconomy;
 import com.muhammaddaffa.mdlib.task.ExecutorManager;
 import com.muhammaddaffa.mdlib.utils.Common;
-import com.muhammaddaffa.mdlib.utils.Executor;
 import com.muhammaddaffa.mdlib.utils.Placeholder;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.generators.ActiveGenerator;
@@ -11,36 +9,33 @@ import com.muhammaddaffa.nextgens.generators.Generator;
 import com.muhammaddaffa.nextgens.generators.managers.GeneratorManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
 import com.muhammaddaffa.nextgens.utils.VisualAction;
-import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GeneratorFixHelper {
 
     public static void fixGenerator(Player player, ActiveGenerator active, Generator generator) {
-        Block block = active.getLocation().getBlock();
-        // money check
-        if (VaultEconomy.getBalance(player) < generator.fixCost()) {
-            NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-enough-money", new Placeholder()
-                    .add("{money}", Common.digits(VaultEconomy.getBalance(player)))
-                    .add("{upgradecost}", Common.digits(generator.fixCost()))
-                    .add("{remaining}", Common.digits(VaultEconomy.getBalance(player) - generator.fixCost())));
-            // play bass sound
-            Utils.bassSound(player);
-            return;
+        GeneratorManager manager = NextGens.getInstance().getGeneratorManager();
+        synchronized (manager) {
+            if (!GeneratorActionHelper.reserve(active)) return;
+            try {
+                if (!canRepair(player, manager, active, generator)) return;
+                if (!GeneratorActionHelper.withdraw(player, generator.fixCost(),
+                        () -> canRepair(player, manager, active, generator))) return;
+                active.setCorrupted(false);
+                manager.saveActiveGenerator(active);
+            } finally {
+                GeneratorActionHelper.release(active);
+            }
         }
-        // take the money from player
-        VaultEconomy.withdraw(player, generator.fixCost());
-        // fix the generator
-        active.setCorrupted(false);
+        Block block = active.getLocation().getBlock();
         // visual actions
         VisualAction.send(player, NextGens.DEFAULT_CONFIG.getConfig(), "corrupt-fix-options", new Placeholder()
                 .add("{gen}", generator.displayName())
                 .add("{cost}", Common.digits(generator.fixCost())));
-        // Save the generator before any delayed work.
-        NextGens.getInstance().getGeneratorManager().saveActiveGenerator(active);
         // play particle
         ExecutorManager.getProvider().async(() -> {
             if (NextGens.DEFAULT_CONFIG.getConfig().getBoolean("corrupt-fix-options.particles")) {
@@ -52,42 +47,56 @@ public class GeneratorFixHelper {
     }
 
     public static void fixGenerators(Player player, GeneratorManager generatorManager) {
-        List<ActiveGenerator> corrupted = generatorManager.getActiveGenerator(player).stream()
-                .filter(ActiveGenerator::isCorrupted)
-                .toList();
-
-        // If there is no generators, skip it
-        if (corrupted.isEmpty()) {
-            NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.fix-empty");
-            return;
+        synchronized (generatorManager) {
+            if (!player.hasPermission("nextgens.repairgens") || NextGens.STOPPING) return;
+            List<ActiveGenerator> corrupted = generatorManager.getActiveGenerator(player).stream()
+                    .filter(ActiveGenerator::isCorrupted)
+                    .toList();
+            if (corrupted.isEmpty()) {
+                NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.fix-empty");
+                return;
+            }
+            List<Generator> tiers = corrupted.stream().map(ActiveGenerator::getGenerator).toList();
+            List<ActiveGenerator> reserved = new ArrayList<>();
+            try {
+                for (ActiveGenerator active : corrupted) {
+                    if (!GeneratorActionHelper.reserve(active)) return;
+                    reserved.add(active);
+                }
+                double cost = 0;
+                for (Generator generator : tiers) {
+                    if (!Double.isFinite(generator.fixCost()) || generator.fixCost() < 0) {
+                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.transaction-failed");
+                        return;
+                    }
+                    cost += generator.fixCost();
+                }
+                if (!GeneratorActionHelper.withdraw(player, cost,
+                        () -> canRepairAll(player, generatorManager, corrupted, tiers))) return;
+                corrupted.forEach(active -> {
+                    active.setCorrupted(false);
+                    generatorManager.saveActiveGenerator(active);
+                });
+                NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.fix-all");
+                Utils.performCashback(player, NextGens.getInstance().getUserManager(), cost);
+            } finally {
+                reserved.forEach(GeneratorActionHelper::release);
+            }
         }
+    }
 
-        double balance = VaultEconomy.getBalance(player);
-        double cost = corrupted.stream()
-                .mapToDouble(g -> g.getGenerator().fixCost())
-                .sum();
+    private static boolean canRepair(Player player, GeneratorManager manager, ActiveGenerator active, Generator generator) {
+        return GeneratorActionHelper.current(manager, active, generator, true)
+                && GeneratorActionHelper.canRepair(player, active);
+    }
 
-        if (balance < cost) {
-            NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.not-enough-money",
-                    new Placeholder()
-                            .add("{money}", Common.digits(balance))
-                            .add("{upgradecost}", Common.digits(cost))
-                            .add("{remaining}", Common.digits(balance - cost))
-            );
-            Utils.bassSound(player);
-            return;
+    private static boolean canRepairAll(Player player, GeneratorManager manager, List<ActiveGenerator> active, List<Generator> tiers) {
+        if (!player.hasPermission("nextgens.repairgens")) return false;
+        for (int i = 0; i < active.size(); i++) {
+            if (!active.get(i).getOwner().equals(player.getUniqueId())
+                    || !canRepair(player, manager, active.get(i), tiers.get(i))) return false;
         }
-
-        // Withdraw money and actually repair the generator
-        VaultEconomy.withdraw(player, cost);
-        corrupted.forEach(active -> {
-            active.setCorrupted(false);
-            generatorManager.saveActiveGenerator(active);
-        });
-
-        // Sends message and perform cashback
-        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.fix-all");
-        Utils.performCashback(player, NextGens.getInstance().getUserManager(), cost);
+        return true;
     }
 
 }
