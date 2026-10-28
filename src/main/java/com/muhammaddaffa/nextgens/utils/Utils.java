@@ -108,14 +108,18 @@ public class Utils {
 
     public static int getCashback(Player player) {
         int cashback = 0;
+        String prefix = "nextgens.cashback.";
         for (PermissionAttachmentInfo pai : player.getEffectivePermissions()) {
             String permission = pai.getPermission();
-            if (!permission.startsWith("nextgens.cashback.")) {
+            if (!pai.getValue() || !permission.startsWith(prefix)) {
                 continue;
             }
-            int current = Integer.parseInt(permission.split("\\.")[2]);
-            if (current > cashback) {
-                cashback = current;
+            try {
+                int current = Integer.parseInt(permission.substring(prefix.length()));
+                if (current > cashback) {
+                    cashback = current;
+                }
+            } catch (NumberFormatException ignored) {
             }
         }
         return cashback;

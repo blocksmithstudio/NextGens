@@ -1,6 +1,5 @@
 package com.muhammaddaffa.nextgens.autosell;
 
-import com.muhammaddaffa.mdlib.utils.Common;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 
@@ -14,15 +13,16 @@ public class Autosell {
 
     public static int getAutosellInventoryInterval(Player player) {
         int interval = 0;
+        String prefix = "nextgens.autosell.inv.";
         for (PermissionAttachmentInfo pai : player.getEffectivePermissions()) {
             String permission = pai.getPermission();
-            if (permission.startsWith("nextgens.autosell.inv")) {
-                String split = permission.split("\\.")[3];
-                if (!Common.isInt(split)) continue;
-                int permissionInterval = Integer.parseInt(split);
-                if (permissionInterval < interval) {
+            if (!pai.getValue() || !permission.startsWith(prefix)) continue;
+            try {
+                int permissionInterval = Integer.parseInt(permission.substring(prefix.length()));
+                if (permissionInterval > 0 && (interval == 0 || permissionInterval < interval)) {
                     interval = permissionInterval;
                 }
+            } catch (NumberFormatException ignored) {
             }
         }
         return interval;
@@ -30,10 +30,9 @@ public class Autosell {
 
     public static boolean hasAutosellInventoryPermission(Player player) {
         for (PermissionAttachmentInfo pai : player.getEffectivePermissions()) {
-            String permission = pai.getPermission();
-            if (permission.startsWith("nextgens.autosell.inv")) return true;
+            if (pai.getValue() && pai.getPermission().equals("nextgens.autosell.inv")) return true;
         }
-        return false;
+        return getAutosellInventoryInterval(player) > 0;
     }
 
     public static boolean hasAutosellGensPermission(Player player) {

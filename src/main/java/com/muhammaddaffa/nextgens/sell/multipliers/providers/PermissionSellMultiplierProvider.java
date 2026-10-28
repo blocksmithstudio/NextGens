@@ -17,20 +17,19 @@ public class PermissionSellMultiplierProvider implements SellMultiplierProvider 
         if (player == null) return 0;
 
         double multiplier = 0.0;
+        String prefix = "nextgens.multiplier.sell.";
         for (PermissionAttachmentInfo pai : player.getEffectivePermissions()) {
             String permission = pai.getPermission();
-            if (!permission.startsWith("nextgens.multiplier.sell")) {
+            if (!pai.getValue() || !permission.startsWith(prefix)) {
                 continue;
             }
             try {
-                String[] stripPermission = permission.split("\\.");
-                String split = stripPermission[3].replace("_", ".");
+                String split = permission.substring(prefix.length()).replace("_", ".");
                 double current = Double.parseDouble(split);
-                if (current > multiplier) {
+                if (Double.isFinite(current) && current > multiplier) {
                     multiplier = current;
                 }
-            } catch (Exception ignored) {
-
+            } catch (NumberFormatException ignored) {
             }
         }
         // get the multiplier in decimals

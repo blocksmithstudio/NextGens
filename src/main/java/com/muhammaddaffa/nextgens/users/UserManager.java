@@ -71,14 +71,18 @@ public class UserManager {
         if (config.getBoolean("default-max-generator.enabled")) {
             max += config.getInt("default-max-generator.amount");
         }
+        String prefix = "nextgens.max.";
         for (PermissionAttachmentInfo pai : player.getEffectivePermissions()) {
             String permission = pai.getPermission();
-            if (!permission.startsWith("nextgens.max.")) {
+            if (!pai.getValue() || !permission.startsWith(prefix)) {
                 continue;
             }
-            int current = Integer.parseInt(permission.split("\\.")[2]);
-            if (current > max) {
-                max = current;
+            try {
+                int current = Integer.parseInt(permission.substring(prefix.length()));
+                if (current > max) {
+                    max = current;
+                }
+            } catch (NumberFormatException ignored) {
             }
         }
 
