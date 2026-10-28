@@ -5,7 +5,6 @@ import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.griefcraft.lwc.LWC;
 import com.griefcraft.lwc.LWCPlugin;
-import com.muhammaddaffa.mdlib.utils.Logger;
 import com.muhammaddaffa.nextgens.NextGens;
 import com.muhammaddaffa.nextgens.sellwand.managers.SellwandManager;
 import com.muhammaddaffa.nextgens.utils.Utils;
@@ -15,6 +14,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -39,9 +39,10 @@ public class SellwandListener implements Listener {
         this.sellwandManager = sellwandManager;
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.isCancelled()
+                || event.useInteractedBlock() == Event.Result.DENY) return;
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
         ItemStack stack = event.getItem();
@@ -67,16 +68,12 @@ public class SellwandListener implements Listener {
         if (Bukkit.getPluginManager().isPluginEnabled("AdvancedChests")) {
             AdvancedChest<?, ?> advancedChest = AdvancedChestsAPI.getChestManager().getAdvancedChest(block.getLocation());
             if (advancedChest != null) {
-                if (!advancedChest.getWhoPlaced().equals(player.getUniqueId())) {
-                    boolean hasAccess = this.hasAccess(player, block);
-                    boolean memberSell = NextGens.DEFAULT_CONFIG.getBoolean("advancedchests-member-sell");
-
-                    // If the player doesn't have access or member selling is disallowed, abort
-                    if (!hasAccess || !memberSell) {
-                        NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.sellwand-failed");
-                        Utils.bassSound(player);
-                        return;
-                    }
+                boolean owner = player.getUniqueId().equals(advancedChest.getWhoPlaced());
+                boolean memberSell = NextGens.DEFAULT_CONFIG.getBoolean("advancedchests-member-sell");
+                if (!hasAccess(player, block) || (!owner && !memberSell)) {
+                    NextGens.DEFAULT_CONFIG.sendMessage(player, "messages.sellwand-failed");
+                    Utils.bassSound(player);
+                    return;
                 }
 
                 List<Inventory> inventories = advancedChest.getPages().values()
@@ -110,7 +107,9 @@ public class SellwandListener implements Listener {
         // Bolt Check
         if (Bukkit.getPluginManager().isPluginEnabled("Bolt")) {
             BoltAPI bolt = NextGens.getInstance().getBoltAPI();
-            return bolt.canAccess(block, player, "interact");
+            if (bolt == null || !bolt.canAccess(block, player, "interact")) {
+                return false;
+            }
         }
 
         // LWC Check
@@ -130,7 +129,9 @@ public class SellwandListener implements Listener {
             if (playerIsland == null || islandAt == null) {
                 return false;
             }
-            return playerIsland.getUniqueId().equals(islandAt.getUniqueId());
+            if (!playerIsland.getUniqueId().equals(islandAt.getUniqueId())) {
+                return false;
+            }
         }
 
         // BentoBox Check
@@ -142,7 +143,9 @@ public class SellwandListener implements Listener {
                 return false;
             }
             world.bentobox.bentobox.database.objects.Island island = islandAt.get();
-            return island.getMemberSet().contains(player.getUniqueId());
+            if (!island.getMemberSet().contains(player.getUniqueId())) {
+                return false;
+            }
         }
 
         return true;
