@@ -112,6 +112,9 @@ public final class NextGens extends JavaPlugin {
         MDLib.onEnable(this);
         // --------------------------------------------
         instance = this;
+        this.userManager.beginLoading();
+        STOPPING = false;
+        LOADED_CHUNKS.clear();
 
         // fancy big text
         Logger.info("""
@@ -141,62 +144,52 @@ public final class NextGens extends JavaPlugin {
         this.dbm.createGeneratorTable();
         this.dbm.createUserTable();
 
-        // register commands & listeners
-        commands();
-        listeners();
-
-        // register hook
-        hooks();
-        // register task
-        tasks();
-
-        // load all generators
+        // Read definitions and local state before starting any gameplay handlers.
         this.generatorManager.loadGenerators();
         this.refundManager.load();
-        this.refundManager.start();
+        this.eventManager.loadEvents();
+        this.eventManager.load();
+        this.worthManager.load();
 
-        ExecutorManager.getProvider().asyncLater(1, () -> {
-            // load chunk coords for active generators
-            this.generatorManager.loadChunkCoords();
-            // load users
-            this.userRepository.loadUsers();
-
-            // load events
-            this.eventManager.loadEvents();
-            this.eventManager.load();
-            this.eventManager.startTask();
-
-            // worth system
-            this.worthManager.load();
-
-            // update checker
-            updateCheck();
-        });
-
-        // Check all loaded chunks on all worlds
-        ExecutorManager.getProvider().syncLater(20, () -> {
-            for (World w : Bukkit.getWorlds()) {
-                for (Chunk chunk : w.getLoadedChunks()) {
-                    ChunkCoord key = new ChunkCoord(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
-                    // If the chunk is already loaded, skip this
-                    if (!NextGens.LOADED_CHUNKS.add(key)) continue;
-                    // If there's no generators on this chunk, skip this
-                    List<String> list = this.generatorManager.getGeneratorsByChunk().get(key);
-                    if (list == null || list.isEmpty()) continue;
-
-                    // Proceed to load the active generators
-                    ExecutorManager.getProvider().async(() -> this.generatorManager.loadActiveGenerator(key, list));
-                }
+        ExecutorManager.getProvider().async(() -> {
+            try {
+                this.userRepository.loadUsers();
+                this.generatorManager.loadChunkCoords();
+                ExecutorManager.getProvider().sync(this::finishStartup);
+            } catch (RuntimeException ex) {
+                Logger.severe("Failed to load persistent data; disabling NextGens to protect saved data");
+                ExecutorManager.getProvider().sync(() -> Bukkit.getPluginManager().disablePlugin(this));
             }
         });
+    }
 
-        // We should reload the generators
-        ExecutorManager.getProvider().syncLater(40L, () -> {
-            // load back the generators
-            this.generatorManager.loadGenerators();
-            // refresh the active generator
-            ExecutorManager.getProvider().async(this.generatorManager::refreshActiveGenerator);
-        });
+    private void finishStartup() {
+        if (STOPPING || !this.isEnabled()) return;
+        try {
+            commands();
+            listeners();
+            hooks();
+            tasks();
+            this.refundManager.start();
+            this.eventManager.startTask();
+            updateCheck();
+
+            // The complete index must exist before any loaded chunk is marked as processed.
+            for (World world : Bukkit.getWorlds()) {
+                for (Chunk chunk : world.getLoadedChunks()) {
+                    this.generatorManager.requestChunkLoad(chunk);
+                }
+            }
+
+            // Reload definitions after other plugins have finished enabling their integrations.
+            ExecutorManager.getProvider().syncLater(40L, () -> {
+                this.generatorManager.loadGenerators();
+                ExecutorManager.getProvider().async(this.generatorManager::refreshActiveGenerator);
+            });
+        } catch (RuntimeException | LinkageError ex) {
+            Logger.severe("Failed to activate NextGens; disabling the plugin to protect saved data");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
     }
 
     @Override

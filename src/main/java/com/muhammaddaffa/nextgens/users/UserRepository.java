@@ -24,13 +24,19 @@ public class UserRepository {
 
     public void loadUsers() {
         String query = "SELECT * FROM " + DatabaseManager.USER_TABLE;
-        dbManager.executeQuery(query, result -> {
+        List<User> users = new ArrayList<>();
+        try (Connection connection = dbManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                User user = extractUserFromResultSet(result);
-                userManager.addUser(user);
+                users.add(extractUserFromResultSet(result));
             }
-            Logger.info("Successfully loaded " + userManager.getUsers().size() + " users data!");
-        });
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to load users; startup aborted", ex);
+        }
+        users.forEach(userManager::addUser);
+        userManager.finishLoading();
+        Logger.info("Successfully loaded " + users.size() + " users data!");
     }
 
     public void saveUser(User user) {

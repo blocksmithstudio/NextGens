@@ -16,6 +16,15 @@ import java.util.stream.Collectors;
 public class UserManager {
 
     private final Map<UUID, User> userMap = new ConcurrentHashMap<>();
+    private volatile boolean loading;
+
+    public void beginLoading() {
+        this.loading = true;
+    }
+
+    public void finishLoading() {
+        this.loading = false;
+    }
 
     @Nullable
     public User getUser(String name) {
@@ -32,6 +41,7 @@ public class UserManager {
 
     @NotNull
     public User getUser(UUID uuid) {
+        if (this.loading) throw new IllegalStateException("User data is still loading");
         return userMap.computeIfAbsent(uuid, User::new);
     }
 

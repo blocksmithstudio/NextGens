@@ -17,9 +17,11 @@ import com.muhammaddaffa.nextgens.utils.*;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.brcdev.shopgui.core.BConfig;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -52,6 +54,8 @@ public class GeneratorManager {
     private final Map<ChunkCoord, List<String>> generatorsByChunk = new ConcurrentHashMap<>();
 
     private final Map<UUID, Set<String>> generatorCount = new ConcurrentHashMap<>();
+    private final Set<ChunkCoord> loadingChunks = ConcurrentHashMap.newKeySet();
+    private volatile boolean chunkIndexReady;
 
     private final DatabaseManager dbm;
     public GeneratorManager(DatabaseManager dbm) {
@@ -253,89 +257,127 @@ public class GeneratorManager {
         });
     }
 
+    public void requestChunkLoad(Chunk chunk) {
+        ChunkCoord coord = new ChunkCoord(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
+        if (!this.chunkIndexReady || NextGens.STOPPING || NextGens.LOADED_CHUNKS.contains(coord)
+                || !this.loadingChunks.add(coord)) return;
+        List<String> locations = this.generatorsByChunk.getOrDefault(coord, List.of());
+        if (locations.isEmpty()) {
+            NextGens.LOADED_CHUNKS.add(coord);
+            this.loadingChunks.remove(coord);
+            return;
+        }
+        try {
+            ExecutorManager.getProvider().async(() -> this.loadActiveGenerator(coord, locations));
+        } catch (RuntimeException ex) {
+            this.loadingChunks.remove(coord);
+            throw ex;
+        }
+    }
+
+    private record StoredGenerator(UUID owner, String location, String generatorId,
+                                   double timer, boolean corrupted) {}
+
     public void loadActiveGenerator(ChunkCoord coord, List<String> serializedLocations) {
-        // 1) early-out if empty
-        if (serializedLocations.isEmpty()) return;
-
-        // 2) build placeholders "(?,?,…)"
-        String placeholders = serializedLocations.stream()
-                .map(s -> "?")
-                .collect(Collectors.joining(","));
-
-        String sql = "SELECT owner, location, generator_id, timer, is_corrupted " +
-                "FROM " + DatabaseManager.GENERATOR_TABLE +
-                " WHERE location IN (" + placeholders + ")";
-
+        if (serializedLocations.isEmpty()) {
+            this.loadingChunks.remove(coord);
+            return;
+        }
+        String placeholders = serializedLocations.stream().map(s -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT owner, location, generator_id, timer, is_corrupted FROM "
+                + DatabaseManager.GENERATOR_TABLE + " WHERE location IN (" + placeholders + ")";
+        List<StoredGenerator> rows = new ArrayList<>();
         try (Connection conn = this.dbm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            // 3) bind all of them at once
             for (int i = 0; i < serializedLocations.size(); i++) {
                 ps.setString(i + 1, serializedLocations.get(i));
             }
-
             try (ResultSet rs = ps.executeQuery()) {
-                int count = 0;
-                List<ActiveGenerator> toRegister = new ArrayList<>();
-
                 while (rs.next()) {
-                    UUID owner = UUID.fromString(rs.getString("owner"));
-                    String serialized = rs.getString("location");
-                    Location loc = LocationUtils.deserialize(serialized);
-                    String genId = rs.getString("generator_id");
-                    double timer = rs.getDouble("timer");
-                    boolean corrupted = rs.getBoolean("is_corrupted");
-
-                    Generator gen = this.getGenerator(genId);
-                    if (gen == null || loc.getWorld() == null) continue;
-
-                    toRegister.add(new ActiveGenerator(owner, loc, gen, timer, corrupted));
-                    count++;
-                }
-
-                // 4) switch back to the main thread to actually register them
-                int finalCount = count;
-                ExecutorManager.getProvider().sync(() -> {
-                    for (ActiveGenerator ag : toRegister) {
-                        String key = LocationUtils.serialize(ag.getLocation());
-                        activeGenerators.put(key, ag);
+                    try {
+                        String location = rs.getString("location");
+                        if (!coord.equals(ChunkCoord.fromSerializedLocation(location))) continue;
+                        String owner = rs.getString("owner");
+                        double timer = rs.getDouble("timer");
+                        if (owner == null || !Double.isFinite(timer)) throw new IllegalArgumentException("Invalid generator data");
+                        rows.add(new StoredGenerator(UUID.fromString(owner), location,
+                                rs.getString("generator_id"), timer, rs.getBoolean("is_corrupted")));
+                    } catch (IllegalArgumentException ex) {
+                        Logger.warning("Skipped an invalid stored generator while loading a chunk");
                     }
-                    Logger.info("Successfully loaded " + finalCount
-                            + " active generators in chunk [" + coord.x() + "," + coord.z() + "]");
-                });
+                }
             }
-        } catch (SQLException ex) {
-            throw new RuntimeException("Failed loading generators for chunk ["
-                    + coord.x() + "," + coord.z() + "]", ex);
-
+            // Resolve worlds on the server scheduler, and touch chunk state on its region scheduler.
+            ExecutorManager.getProvider().sync(() -> {
+                try {
+                    World world = Bukkit.getWorld(coord.world());
+                    if (world == null || NextGens.STOPPING) {
+                        this.loadingChunks.remove(coord);
+                        return;
+                    }
+                    ExecutorManager.getProvider().region(world, coord.x(), coord.z(), () -> {
+                        try {
+                            if (NextGens.STOPPING || !world.isChunkLoaded(coord.x(), coord.z())) return;
+                            synchronized (this) {
+                                List<String> indexed = this.generatorsByChunk.getOrDefault(coord, List.of());
+                                for (StoredGenerator row : rows) {
+                                    if (!indexed.contains(row.location())) continue;
+                                    Generator generator = this.getGenerator(row.generatorId());
+                                    if (generator == null) continue;
+                                    Location location = LocationUtils.deserialize(row.location());
+                                    if (location.getWorld() != world) continue;
+                                    // A query started before a placement, upgrade or removal must not replace live state.
+                                    this.activeGenerators.putIfAbsent(row.location(), new ActiveGenerator(row.owner(),
+                                            location, generator, row.timer(), row.corrupted()));
+                                }
+                                NextGens.LOADED_CHUNKS.add(coord);
+                            }
+                        } finally {
+                            this.loadingChunks.remove(coord);
+                        }
+                    });
+                } catch (RuntimeException ex) {
+                    this.loadingChunks.remove(coord);
+                    Logger.warning("Failed to schedule generator loading; the chunk can be retried");
+                }
+            });
+        } catch (SQLException | RuntimeException ex) {
+            this.loadingChunks.remove(coord);
+            Logger.warning("Failed to load generators; the chunk can be retried");
         }
     }
 
     public void loadChunkCoords() {
-        String query = "SELECT * FROM " + DatabaseManager.GENERATOR_TABLE;
-        this.dbm.executeQuery(query, result -> {
+        Map<ChunkCoord, List<String>> index = new HashMap<>();
+        Map<UUID, Set<String>> counts = new HashMap<>();
+        int skipped = 0;
+        String query = "SELECT owner, location FROM " + DatabaseManager.GENERATOR_TABLE;
+        try (Connection connection = this.dbm.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-
-                // get the uuid string
-                String uuidString = result.getString(1);
-                // if the uuid string is null, skip the iteration
-                if (uuidString == null) {
-                    continue;
+                try {
+                    String ownerString = result.getString("owner");
+                    if (ownerString == null) throw new IllegalArgumentException("Missing generator owner");
+                    UUID owner = UUID.fromString(ownerString);
+                    String serialized = result.getString("location");
+                    ChunkCoord coord = ChunkCoord.fromSerializedLocation(serialized);
+                    counts.computeIfAbsent(owner, k -> new HashSet<>()).add(serialized);
+                    index.computeIfAbsent(coord, k -> new ArrayList<>()).add(serialized);
+                } catch (IllegalArgumentException ex) {
+                    skipped++;
                 }
-                // Load the chunk coords
-                String serialized = result.getString(2);
-                Location location = LocationUtils.deserialize(serialized);
-                ChunkCoord coord = ChunkCoord.fromLocation(location);
-                // Add the generator count
-                addGeneratorCount(UUID.fromString(uuidString), serialized);
-                // Store the data into the map
-                this.generatorsByChunk
-                        .computeIfAbsent(coord, k -> new ArrayList<>())
-                        .add(serialized);
             }
-            // send log message
-            Logger.info("Successfully stored chunk coords for " + this.generatorsByChunk.size() + " active generators!");
-        });
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to load the generator index; startup aborted", ex);
+        }
+        synchronized (this) {
+            index.forEach((coord, locations) -> this.generatorsByChunk.put(coord, List.copyOf(locations)));
+            counts.forEach((owner, locations) -> locations.forEach(location -> addGeneratorCount(owner, location)));
+            this.chunkIndexReady = true;
+        }
+        if (skipped != 0) Logger.warning("Skipped " + skipped + " invalid generator index rows");
+        Logger.info("Successfully indexed generators in " + index.size() + " chunks!");
     }
 
     public void addChunkCoord(ActiveGenerator active) {
@@ -371,7 +413,7 @@ public class GeneratorManager {
     }
 
     public Map<ChunkCoord, List<String>> getGeneratorsByChunk() {
-        return generatorsByChunk;
+        return this.generatorsByChunk;
     }
 
     public void saveActiveGenerator(ActiveGenerator active) {
