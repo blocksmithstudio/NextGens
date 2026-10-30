@@ -30,18 +30,11 @@ report in issue #16 concerns NextGens 1.3.3. Current source isolates optional
 provider classes and skips providers that fail to load. The issue #16 follow-up
 also avoids loading unselected providers while the configured one is usable.
 Check your server's NextGens version and the selected provider before installing
-additional hologram plugins. Current source requires Java 25; upgrading from an
-older binary also requires checking server and Java compatibility.
+additional hologram plugins. Build with JDK 25; the plugin emits Java 21 bytecode for older server readers.
+Choose a runtime that satisfies the server's Java requirement.
 
-Run the dependency-free selection regression check with a JDK:
-
-```sh
-java scripts/HologramProviderCheck.java
-```
-
-This check compiles the real manager and provider interface against small API
-substitutes to exercise selection, deterministic fallback, missing dependency
-behavior, and nonfatal registration. A clean verification build, the selection
-regression checks, and GitHub CI are the acceptance checks for this change;
-in-game testing is not required. These checks do not claim live rendering was
-tested.
+The provider-selection regression check is maintained in the owner-designated
+private external verification workspace and runs against this checkout. It
+covers selection, deterministic fallback, missing dependencies and nonfatal
+registration with isolated API substitutes. Live hologram rendering and optional
+provider integrations require separate server testing.

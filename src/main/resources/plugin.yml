@@ -1,7 +1,7 @@
 name: NextGens
 version: '${project.version}'
 main: com.muhammaddaffa.nextgens.NextGens
-api-version: 1.13
+api-version: '1.21'
 authors: [aglerr]
 description: A next generation gens tycoon plugin
 website: https://muhammaddaffa.com

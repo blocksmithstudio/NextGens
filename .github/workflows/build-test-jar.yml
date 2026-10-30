@@ -1,4 +1,4 @@
-name: Build test JAR
+name: Build plugin JAR
 
 on:
   push:
@@ -28,8 +28,8 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - name: Build and run regression checks
-        run: bash scripts/check-regressions.sh clean
+      - name: Build plugin
+        run: bash ./mvnw -B -ntp clean verify
 
       - name: Select distributable JAR
         shell: bash
